@@ -246,24 +246,48 @@ const SettingsView = ({
     }
   };
 
-  const handleStockChange = (productId, newStock) => {
-    if (newStock === '') {
-      updateProductDetails(productId, { stock: '' });
-      return;
-    }
-    const val = parseInt(newStock);
-    if (!isNaN(val) && val >= 0) {
-      updateProductDetails(productId, { stock: newStock });
-    }
+  const [editedStocks, setEditedStocks] = useState({});
+
+  const handleLocalStockChange = (productId, value) => {
+    setEditedStocks(prev => ({ ...prev, [productId]: value }));
   };
 
-  const handleStockBlur = (productId, stock) => {
-    const val = parseInt(stock);
-    if (isNaN(val) || val < 0) {
+  const handleSaveStock = (productId) => {
+    const rawVal = editedStocks[productId];
+    if (rawVal === undefined) return;
+
+    if (rawVal === '') {
       updateProductDetails(productId, { stock: 0 });
-    } else {
-      updateProductDetails(productId, { stock: val });
+      setEditedStocks(prev => {
+        const copy = { ...prev };
+        delete copy[productId];
+        return copy;
+      });
+      addToast(lang === 'sq' ? 'Stoku u përditësua në 0.' : 'Stock set to 0.', 'success');
+      return;
     }
+
+    const val = parseInt(rawVal);
+    if (isNaN(val) || val < 0) {
+      addToast(lang === 'sq' ? 'Ju lutem vendosni një numër të vlefshëm stoku.' : 'Please enter a valid stock value.', 'error');
+      return;
+    }
+
+    updateProductDetails(productId, { stock: val });
+    setEditedStocks(prev => {
+      const copy = { ...prev };
+      delete copy[productId];
+      return copy;
+    });
+    addToast(lang === 'sq' ? 'Stoku u ruajt me sukses!' : 'Stock saved successfully!', 'success');
+  };
+
+  const handleCancelStock = (productId) => {
+    setEditedStocks(prev => {
+      const copy = { ...prev };
+      delete copy[productId];
+      return copy;
+    });
   };
 
   return (
@@ -903,13 +927,58 @@ const SettingsView = ({
 
                   <div className="editor-control-group">
                     <label>{lang === 'sq' ? 'Stoku' : 'Stock'}</label>
-                    <input
-                      type="number"
-                      className="stock-input"
-                      value={product.stock}
-                      onChange={(e) => handleStockChange(product.id, e.target.value)}
-                      onBlur={(e) => handleStockBlur(product.id, e.target.value)}
-                    />
+                    <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                      <input
+                        type="number"
+                        className="stock-input"
+                        value={editedStocks[product.id] !== undefined ? editedStocks[product.id] : product.stock}
+                        onChange={(e) => handleLocalStockChange(product.id, e.target.value)}
+                        style={{
+                          borderColor: (editedStocks[product.id] !== undefined && String(editedStocks[product.id]) !== String(product.stock)) ? 'var(--warning)' : 'var(--border-color)',
+                          transition: 'border-color var(--transition-fast)'
+                        }}
+                      />
+                      {editedStocks[product.id] !== undefined && String(editedStocks[product.id]) !== String(product.stock) && (
+                        <div style={{ display: 'flex', gap: '4px', animation: 'fadeIn 0.2s ease-out' }}>
+                          <button
+                            type="button"
+                            onClick={() => handleSaveStock(product.id)}
+                            style={{
+                              background: 'var(--primary)',
+                              color: 'var(--bg-primary)',
+                              border: 'none',
+                              padding: '6px 10px',
+                              borderRadius: '6px',
+                              cursor: 'pointer',
+                              fontWeight: 700,
+                              fontSize: '0.75rem',
+                              boxShadow: '0 2px 8px rgba(16, 185, 129, 0.25)',
+                              transition: 'all var(--transition-fast)'
+                            }}
+                            title={lang === 'sq' ? 'Ruaj' : 'Save'}
+                          >
+                            {lang === 'sq' ? 'Ruaj' : 'Save'}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleCancelStock(product.id)}
+                            style={{
+                              background: 'rgba(255,255,255,0.05)',
+                              color: 'var(--text-muted)',
+                              border: '1px solid var(--border-color)',
+                              padding: '6px 8px',
+                              borderRadius: '6px',
+                              cursor: 'pointer',
+                              fontSize: '0.75rem',
+                              transition: 'all var(--transition-fast)'
+                            }}
+                            title={lang === 'sq' ? 'Anulo' : 'Cancel'}
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   </div>
 
                   <button
