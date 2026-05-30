@@ -2,6 +2,11 @@
 
 html {
   font-size: 115%;
+  height: 100%;
+  height: -webkit-fill-available;
+  overflow: hidden;
+  margin: 0;
+  padding: 0;
 }
 
 :root {
@@ -55,20 +60,25 @@ html {
 
 body {
   overflow: hidden;
-  height: 100vh;
+  height: 100%;
+  height: -webkit-fill-available;
   width: 100vw;
+  margin: 0;
+  padding: 0;
 }
 
 /* App Container Layout */
 .app-container {
   display: flex;
   height: 100vh;
+  height: 100dvh;
   width: 100vw;
   background-color: var(--bg-primary);
   background-image: 
     radial-gradient(at 0% 0%, rgba(16, 185, 129, 0.05) 0px, transparent 50%),
     radial-gradient(at 100% 100%, rgba(59, 130, 246, 0.04) 0px, transparent 50%);
   position: relative;
+  overflow: hidden;
 }
 
 /* Custom Scrollbar */
@@ -267,10 +277,10 @@ body {
 }
 
 .view-viewport {
-  flex-grow: 1;
+  flex: 1 1 0%;
+  min-height: 0;
   padding: 24px 32px;
   overflow-y: auto;
-  height: calc(100vh - 70px);
 }
 
 /* View Animations */
@@ -1552,8 +1562,9 @@ body {
 /* Toast Notifications */
 .toast-container {
   position: fixed;
-  bottom: 24px;
+  top: 24px;
   right: 24px;
+  bottom: auto;
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -1578,7 +1589,7 @@ body {
 @keyframes slideInToast {
   from {
     opacity: 0;
-    transform: translateY(20px) scale(0.9);
+    transform: translateY(-20px) scale(0.9);
   }
   to {
     opacity: 1;
@@ -1737,9 +1748,12 @@ body {
 @media (max-width: 768px) {
   .app-container {
     flex-direction: column;
+    height: 100dvh;
+    overflow: hidden;
   }
 
   .sidebar {
+    position: relative;
     width: 100%;
     height: 64px;
     flex-direction: row;
@@ -1748,10 +1762,10 @@ body {
     padding: 0 16px;
     border-right: none;
     border-top: 1px solid var(--border-color);
-    order: 2; /* Bottom tab bar layout */
     background-color: var(--bg-secondary);
     z-index: 1000;
-    position: relative;
+    order: 2;
+    flex-shrink: 0;
   }
 
   .logo-container {
@@ -1789,9 +1803,13 @@ body {
   }
 
   .main-content {
-    height: calc(100vh - 64px);
+    flex: 1 1 0%;
+    min-height: 0;
     order: 1;
     overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
   }
 
   .header {
@@ -1809,8 +1827,6 @@ body {
 
   .view-viewport {
     padding: 12px;
-    height: calc(100vh - 120px);
-    overflow-y: auto;
   }
 
   /* POS Viewport structure toggled for Mobile Cart Drawer overlay */
@@ -1825,7 +1841,7 @@ body {
     top: 0;
     right: 0;
     width: 100%;
-    height: calc(100% - 64px);
+    height: calc(100dvh - 64px);
     z-index: 1500;
     transform: translateX(100%);
     transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
@@ -1838,6 +1854,19 @@ body {
   .cart-sidebar.mobile-open {
     transform: translateX(0);
     box-shadow: -8px 0 32px rgba(0, 0, 0, 0.5);
+  }
+
+  .toast-container {
+    top: 16px;
+    right: 16px;
+    left: 16px;
+    bottom: auto;
+    align-items: center;
+  }
+
+  .toast {
+    width: 100%;
+    min-width: 0;
   }
 
   .category-filter-list {
