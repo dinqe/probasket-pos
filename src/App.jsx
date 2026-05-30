@@ -111,6 +111,7 @@ function App() {
   });
   const [appPasswordInput, setAppPasswordInput] = useState('');
   const [appAuthError, setAppAuthError] = useState(false);
+  const [showForgotHelp, setShowForgotHelp] = useState(false);
   const [isAdminUnlocked, setIsAdminUnlocked] = useState(false);
   const [activeTab, setActiveTab] = useState('register'); // register, dashboard, settings
   const [cart, setCart] = useState([]);
@@ -1070,6 +1071,32 @@ function App() {
               {T[lang].unlockApp}
             </button>
           </form>
+
+          <div>
+            <button 
+              type="button"
+              onClick={() => setShowForgotHelp(!showForgotHelp)}
+              style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '0.8rem', textDecoration: 'underline' }}
+            >
+              {lang === 'sq' ? 'Keni harruar fjalëkalimin?' : 'Forgot passcode?'}
+            </button>
+            
+            {showForgotHelp && (
+              <div className="glass-panel" style={{ marginTop: '12px', padding: '12px', fontSize: '0.75rem', color: 'var(--text-muted)', textAlign: 'left', lineHeight: '1.4', background: 'rgba(255,255,255,0.01)', borderColor: 'var(--border-color)', animation: 'fadeIn 0.2s ease-out' }}>
+                {lang === 'sq' ? (
+                  <p style={{ margin: 0 }}>
+                    <strong>Për punonjësit:</strong> Kontaktoni menaxherin tuaj. <br/>
+                    <strong>Për administratorin:</strong> Mund të shkruani <em>Fjalëkalimin Admin</em> direkt në fushën më sipër për të hyrë në POS. Gjithashtu mund ta shihni ose ndryshoni fjalëkalimin në panelin e Supabase (te tabela <code>settings</code> me çelësin <code>worker_passcode</code>).
+                  </p>
+                ) : (
+                  <p style={{ margin: 0 }}>
+                    <strong>For workers:</strong> Please contact your manager or admin.<br/>
+                    <strong>For admins:</strong> You can enter your <em>Admin Password</em> directly into the field above to bypass this screen. Alternatively, you can view or edit the passcode in your Supabase dashboard (inside the <code>settings</code> table under the <code>worker_passcode</code> key).
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
         </div>
       </div>
     );
