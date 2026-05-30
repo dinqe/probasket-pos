@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Lock, Unlock, ShieldAlert, KeyRound, Database, RefreshCcw, Trash2, Camera, ImagePlus, Upload, X } from 'lucide-react';
 import ProductImage from './ProductImage';
 import { compressImage } from '../utils/imageCompressor';
+import { T } from '../utils/translations';
 
 const SettingsView = ({ 
   products, 
@@ -17,7 +18,8 @@ const SettingsView = ({
   addCategory,
   removeCategory,
   addProduct,
-  removeProduct
+  removeProduct,
+  lang = 'sq'
 }) => {
   const [passwordInput, setPasswordInput] = useState('');
   const [authError, setAuthError] = useState(false);
@@ -35,10 +37,10 @@ const SettingsView = ({
       setLocalAuthError(false);
       setLocalPasswordInput('');
       setShowUnlockModal(false);
-      addToast('Pricing controls unlocked.', 'success');
+      addToast(T[lang].pricingControlsUnlocked, 'success');
     } else {
       setLocalAuthError(true);
-      addToast('Invalid admin password.', 'error');
+      addToast(T[lang].invalidAdminPassword, 'error');
     }
   };
 
@@ -66,7 +68,7 @@ const SettingsView = ({
     const currentVariants = product.variants || [];
     const exists = currentVariants.some(v => (v.name || v).toLowerCase() === inputText.trim().toLowerCase());
     if (exists) {
-      addToast('Option already exists.', 'error');
+      addToast(T[lang].optionExists, 'error');
       return;
     }
 
@@ -74,13 +76,13 @@ const SettingsView = ({
     updateProductDetails(productId, { variants: updatedVariants });
     
     setVariantInputs(prev => ({ ...prev, [productId]: '' }));
-    addToast(`Option "${inputText.trim()}" added to ${product.name}.`, 'success');
+    addToast(`Opsioni "${inputText.trim()}" u shtua te ${product.name}.`, 'success');
   };
 
   const handleRemoveVariant = (product, variantToRemoveName) => {
     const updatedVariants = (product.variants || []).filter(v => (v.name || v) !== variantToRemoveName);
     updateProductDetails(product.id, { variants: updatedVariants });
-    addToast(`Option "${variantToRemoveName}" removed.`, 'success');
+    addToast(T[lang].optionRemovedSuccess, 'success');
   };
 
   const handleNewProdImageUpload = async (e) => {
@@ -89,7 +91,7 @@ const SettingsView = ({
     try {
       const base64 = await compressImage(file);
       setNewProdCustomImage(base64);
-      addToast('Product photo uploaded and optimized.', 'success');
+      addToast(lang === 'sq' ? 'Fotoja u ngarkua me sukses.' : 'Product photo uploaded and optimized.', 'success');
     } catch (err) {
       addToast(err.message || 'Error processing image file.', 'error');
     }
@@ -101,7 +103,7 @@ const SettingsView = ({
     try {
       const base64 = await compressImage(file);
       updateProductDetails(productId, { image: base64 });
-      addToast('Product image updated successfully!', 'success');
+      addToast(T[lang].productImageUpdated, 'success');
     } catch (err) {
       addToast(err.message || 'Error processing image file.', 'error');
     }
@@ -123,7 +125,7 @@ const SettingsView = ({
         return typeof v === 'string' ? { name: v, image: '🥤' } : v;
       });
       updateProductDetails(productId, { variants: updatedVariants });
-      addToast(`Updated flavor image for "${variantName}".`, 'success');
+      addToast(lang === 'sq' ? `Fotoja e shijes "${variantName}" u përditësua.` : `Updated flavor image for "${variantName}".`, 'success');
     } catch (err) {
       addToast(err.message || 'Error processing image file.', 'error');
     }
@@ -140,7 +142,7 @@ const SettingsView = ({
   const handleAddProductSubmit = (e) => {
     e.preventDefault();
     if (!newProdName.trim()) {
-      addToast('Product name is required.', 'error');
+      addToast(T[lang].productNameRequired, 'error');
       return;
     }
 
@@ -152,7 +154,7 @@ const SettingsView = ({
         .filter(v => v !== '')
         .map(v => ({ name: v, image: '🥤' }));
       if (parsedVariants.length === 0) {
-        addToast('Variable products require at least one flavor/option variant.', 'error');
+        addToast(T[lang].variableProductsRequireVariant, 'error');
         return;
       }
     }
@@ -190,25 +192,25 @@ const SettingsView = ({
       setIsAdminUnlocked(true);
       setAuthError(false);
       setPasswordInput('');
-      addToast('Admin panel unlocked successfully!', 'success');
+      addToast(T[lang].pricingControlsUnlocked, 'success');
     } else {
       setAuthError(true);
-      addToast('Invalid admin password. Try again.', 'error');
+      addToast(T[lang].invalidAdminPassword, 'error');
     }
   };
 
   const handlePasswordChangeSubmit = (e) => {
     e.preventDefault();
     if (currentPw !== adminPassword) {
-      addToast('Current password does not match.', 'error');
+      addToast(lang === 'sq' ? 'Fjalëkalimi aktual është i pasaktë.' : 'Current password does not match.', 'error');
       return;
     }
     if (newPw.trim() === '') {
-      addToast('New password cannot be empty.', 'error');
+      addToast(lang === 'sq' ? 'Fjalëkalimi i ri nuk mund të jetë bosh.' : 'New password cannot be empty.', 'error');
       return;
     }
     if (newPw !== confirmNewPw) {
-      addToast('Passwords do not match.', 'error');
+      addToast(lang === 'sq' ? 'Fjalëkalimet nuk përputhen.' : 'Passwords do not match.', 'error');
       return;
     }
 
@@ -216,12 +218,12 @@ const SettingsView = ({
     setCurrentPw('');
     setNewPw('');
     setConfirmNewPw('');
-    addToast('Admin password updated successfully!', 'success');
+    addToast(T[lang].passwordChangeSuccess, 'success');
   };
 
   const handleLock = () => {
     setIsAdminUnlocked(false);
-    addToast('Admin panel locked.', 'success');
+    addToast(T[lang].adminPanelLocked, 'success');
   };
 
   const handlePriceChange = (productId, newPrice) => {
@@ -273,20 +275,20 @@ const SettingsView = ({
           <div className="glass-panel settings-panel">
             <h3 className="settings-section-title" style={{ display: 'flex', alignItems: 'center', gap: '8px', margin: 0, paddingBottom: '12px' }}>
               <Lock size={16} className="text-muted" />
-              Security Status
+              {T[lang].securityStatus}
             </h3>
             <div className="status-indicator" style={{ borderStyle: 'dashed' }}>
               <div className="status-dot" style={{ background: 'var(--text-muted)', boxShadow: 'none' }}></div>
-              <span>Admin session locked. Price adjustments are disabled.</span>
+              <span>{T[lang].adminSessionLocked}</span>
             </div>
             
             <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               <div className="form-group">
-                <label style={{ fontSize: '0.8rem' }}>Enter Admin Password to Edit Prices</label>
+                <label style={{ fontSize: '0.8rem' }}>{T[lang].enterPasswordLabel}</label>
                 <input
                   type="password"
                   className="settings-input"
-                  placeholder="••••••••"
+                  placeholder={T[lang].pinPlaceholder}
                   value={passwordInput}
                   onChange={(e) => setPasswordInput(e.target.value)}
                   style={{ padding: '10px 14px' }}
@@ -294,11 +296,11 @@ const SettingsView = ({
               </div>
               {authError && (
                 <span className="pin-input-error" style={{ fontSize: '0.75rem', marginTop: '-4px' }}>
-                  Incorrect password. Please try again.
+                  {T[lang].invalidAdminPassword}
                 </span>
               )}
               <button type="submit" className="btn btn-primary" style={{ padding: '10px' }}>
-                Unlock Price Settings
+                {T[lang].unlockPriceSettingsBtn}
               </button>
             </form>
           </div>
@@ -306,7 +308,7 @@ const SettingsView = ({
           <div className="glass-panel settings-panel">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <h3 className="settings-section-title" style={{ margin: 0, border: 'none', padding: 0 }}>
-                Security Status
+                {T[lang].securityStatus}
               </h3>
               <button 
                 className="admin-badge unlocked" 
@@ -314,24 +316,24 @@ const SettingsView = ({
                 style={{ padding: '6px 12px', fontSize: '0.8rem', cursor: 'pointer' }}
               >
                 <Unlock size={12} style={{ marginRight: '6px' }} />
-                Lock Panel
+                {T[lang].lockPanel}
               </button>
             </div>
             
             <div className="status-indicator">
               <div className="status-dot"></div>
-              <span>Admin session active. Price changes allowed.</span>
+              <span>{T[lang].adminSessionActive}</span>
             </div>
-
+            
             {/* Change Admin Password */}
             <form onSubmit={handlePasswordChangeSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginTop: '12px' }}>
               <h4 style={{ fontWeight: 600, fontSize: '0.95rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <KeyRound size={16} className="text-primary" />
-                Update Admin Password
+                {T[lang].updatePasswordTitle}
               </h4>
 
               <div className="form-group">
-                <label>Current Password</label>
+                <label>{T[lang].currentPasswordLabel}</label>
                 <input
                   type="password"
                   className="settings-input"
@@ -342,7 +344,7 @@ const SettingsView = ({
               </div>
 
               <div className="form-group">
-                <label>New Password</label>
+                <label>{T[lang].newPasswordLabel}</label>
                 <input
                   type="password"
                   className="settings-input"
@@ -353,7 +355,7 @@ const SettingsView = ({
               </div>
 
               <div className="form-group">
-                <label>Confirm New Password</label>
+                <label>{T[lang].confirmNewPasswordLabel}</label>
                 <input
                   type="password"
                   className="settings-input"
@@ -364,7 +366,7 @@ const SettingsView = ({
               </div>
 
               <button type="submit" className="btn btn-secondary" style={{ padding: '10px' }}>
-                Change Password
+                {T[lang].changePasswordBtn}
               </button>
             </form>
           </div>
@@ -374,23 +376,23 @@ const SettingsView = ({
         <div className="glass-panel settings-panel">
           <h3 className="settings-section-title" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <KeyRound size={16} className="text-primary" style={{ transform: 'rotate(-45deg)' }} />
-            Category Management
+            {T[lang].categoryManagement}
           </h3>
           <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', lineHeight: '1.4' }}>
-            Add new categories or delete existing ones. Deleted categories reassign items to "Uncategorized".
+            {T[lang].categoryManagementDescription}
           </p>
 
           <form onSubmit={handleAddCategorySubmit} style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
             <input
               type="text"
               className="settings-input"
-              placeholder="New Category Name..."
+              placeholder={T[lang].newCategoryPlaceholder}
               value={newCategoryInput}
               onChange={(e) => setNewCategoryInput(e.target.value)}
               style={{ flexGrow: 1, padding: '8px 12px', fontSize: '0.85rem' }}
             />
             <button type="submit" className="btn btn-primary" style={{ padding: '8px 16px', borderRadius: 'var(--radius-md)', fontSize: '0.85rem' }}>
-              Add
+              {T[lang].addBtn}
             </button>
           </form>
 
@@ -417,7 +419,9 @@ const SettingsView = ({
                   animation: 'slideInCart 0.2s ease-out'
                 }}
               >
-                <span style={{ fontWeight: 500, fontSize: '0.85rem' }}>{category}</span>
+                <span style={{ fontWeight: 500, fontSize: '0.85rem' }}>
+                  {category === 'Uncategorized' ? T[lang].uncategorized : category}
+                </span>
                 <button
                   type="button"
                   onClick={() => removeCategory(category)}
@@ -431,9 +435,7 @@ const SettingsView = ({
                     padding: '0 4px',
                     transition: 'color var(--transition-fast)'
                   }}
-                  title={`Remove ${category}`}
-                  onMouseEnter={(e) => e.target.style.color = 'var(--danger)'}
-                  onMouseLeave={(e) => e.target.style.color = 'rgba(239, 68, 68, 0.7)'}
+                  title={lang === 'sq' ? `Fshi kategorinë ${category}` : `Remove ${category}`}
                 >
                   ✕
                 </button>
@@ -446,12 +448,12 @@ const SettingsView = ({
         <div className="glass-panel settings-panel">
           <h3 className="settings-section-title" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <KeyRound size={16} className="text-primary" style={{ transform: 'none' }} />
-            Add New Product
+            {T[lang].addProductTitle}
           </h3>
 
           <form onSubmit={handleAddProductSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
             <div className="form-group">
-              <label>Drink Name</label>
+              <label>{T[lang].drinkNameLabel}</label>
               <input
                 type="text"
                 className="settings-input"
@@ -465,7 +467,7 @@ const SettingsView = ({
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
               <div className="form-group">
-                <label>Price ($)</label>
+                <label>{T[lang].priceLabel}</label>
                 <input
                   type="number"
                   step="0.01"
@@ -478,7 +480,7 @@ const SettingsView = ({
                 />
               </div>
               <div className="form-group">
-                <label>Starting Stock</label>
+                <label>{T[lang].startingStockLabel}</label>
                 <input
                   type="number"
                   className="settings-input"
@@ -493,7 +495,7 @@ const SettingsView = ({
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
               <div className="form-group">
-                <label>Category</label>
+                <label>{T[lang].categoryLabel}</label>
                 <select
                   className="settings-input"
                   value={newProdCategory || (categories[0] || '')}
@@ -501,20 +503,20 @@ const SettingsView = ({
                   style={{ padding: '10px', cursor: 'pointer' }}
                 >
                   {categories.map(c => (
-                    <option key={c} value={c}>{c}</option>
+                    <option key={c} value={c}>{c === 'Uncategorized' ? T[lang].uncategorized : c}</option>
                   ))}
                 </select>
               </div>
               <div className="form-group">
-                <label>Product Type</label>
+                <label>{T[lang].productTypeLabel}</label>
                 <select
                   className="settings-input"
                   value={newProdType}
                   onChange={(e) => setNewProdType(e.target.value)}
                   style={{ padding: '10px', cursor: 'pointer' }}
                 >
-                  <option value="simple">Simple</option>
-                  <option value="variable">Variable</option>
+                  <option value="simple">{lang === 'sq' ? 'I thjeshtë' : 'Simple'}</option>
+                  <option value="variable">{lang === 'sq' ? 'Me opsione' : 'Variable'}</option>
                 </select>
               </div>
             </div>
@@ -522,7 +524,7 @@ const SettingsView = ({
             {/* Comma-separated variants if variable product type selected */}
             {newProdType === 'variable' && (
               <div className="form-group" style={{ animation: 'fadeIn 0.2s ease-out' }}>
-                <label>Flavors/Variants (comma-separated)</label>
+                <label>{T[lang].flavorsLabel}</label>
                 <input
                   type="text"
                   className="settings-input"
@@ -537,7 +539,7 @@ const SettingsView = ({
 
             {/* Emoji Selector */}
             <div className="form-group">
-              <label>Select Emoji Icon</label>
+              <label>{T[lang].selectEmojiLabel}</label>
               <div style={{ 
                 display: 'flex', 
                 gap: '6px', 
@@ -554,7 +556,7 @@ const SettingsView = ({
                     type="button"
                     onClick={() => {
                       setNewProdEmoji(emoji);
-                      setNewProdCustomImage(null); // Clear custom upload if user picks an emoji
+                      setNewProdCustomImage(null);
                     }}
                     style={{ 
                       fontSize: '1.2rem', 
@@ -579,7 +581,7 @@ const SettingsView = ({
 
             {/* Custom Image Upload Option */}
             <div className="form-group">
-              <label>Or Upload Custom Picture</label>
+              <label>{T[lang].uploadCustomImageLabel}</label>
               <div style={{
                 display: 'flex',
                 alignItems: 'center',
@@ -649,7 +651,7 @@ const SettingsView = ({
                     transition: 'all var(--transition-fast)'
                   }}>
                     <ImagePlus size={14} />
-                    Choose Image File
+                    {T[lang].chooseImageFileBtn}
                   </label>
                   <input
                     type="file"
@@ -659,7 +661,7 @@ const SettingsView = ({
                     style={{ display: 'none' }}
                   />
                   <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '4px' }}>
-                    Images are compressed automatically for fast POS display.
+                    {T[lang].imagesCompressedNotice}
                   </div>
                 </div>
               </div>
@@ -680,17 +682,15 @@ const SettingsView = ({
                 }}
               />
               <label htmlFor="newProdIsFavorite" style={{ fontSize: '0.85rem', cursor: 'pointer', fontWeight: 500 }}>
-                Mark as Favorite (always visible in all categories)
+                {T[lang].markAsFavoriteLabel}
               </label>
             </div>
 
             <button type="submit" className="btn btn-primary" style={{ width: '100%', padding: '12px' }}>
-              Create Product
+              {T[lang].createProductBtn}
             </button>
           </form>
         </div>
-
-
       </div>
 
       {/* Catalog & Pricing Manager */}
@@ -698,7 +698,7 @@ const SettingsView = ({
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', borderBottom: '1px solid var(--border-color)', paddingBottom: '12px', marginBottom: '8px' }}>
           <h3 className="settings-section-title" style={{ display: 'flex', alignItems: 'center', gap: '8px', border: 'none', margin: 0, paddingBottom: 0 }}>
             <ShieldAlert size={18} className="text-primary" />
-            Catalog Pricing & Stock Controller
+            {T[lang].pricingStockController}
           </h3>
           <button 
             type="button"
@@ -706,7 +706,7 @@ const SettingsView = ({
             onClick={() => {
               if (isAdminUnlocked) {
                 setIsAdminUnlocked(false);
-                addToast('Pricing controls locked.', 'success');
+                addToast(T[lang].adminPanelLocked, 'success');
               } else {
                 setShowUnlockModal(true);
               }
@@ -727,7 +727,7 @@ const SettingsView = ({
             }}
           >
             {isAdminUnlocked ? <Unlock size={12} /> : <Lock size={12} />}
-            {isAdminUnlocked ? 'Lock Prices' : 'Unlock Prices'}
+            {isAdminUnlocked ? T[lang].lockPricesBtn : T[lang].unlockPricesBtn}
           </button>
         </div>
         
@@ -736,7 +736,7 @@ const SettingsView = ({
             <div key={product.id} className="product-editor-row" style={{ display: 'flex', flexDirection: 'column', gap: '12px', alignItems: 'stretch' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px', width: '100%' }}>
                 <div className="editor-info">
-                  <div style={{ position: 'relative', width: '50px', height: '50px', borderRadius: '8px', overflow: 'hidden', cursor: 'pointer', flexShrink: 0 }} className="editor-image-wrapper" title="Click to change product image">
+                  <div style={{ position: 'relative', width: '50px', height: '50px', borderRadius: '8px', overflow: 'hidden', cursor: 'pointer', flexShrink: 0 }} className="editor-image-wrapper" title={T[lang].changeImageTitle}>
                     <ProductImage src={product.image} alt={product.name} size="2.2rem" />
                     <label 
                       htmlFor={`replace-img-${product.id}`}
@@ -775,7 +775,7 @@ const SettingsView = ({
                         onChange={(e) => updateProductDetails(product.id, { name: e.target.value })}
                         onBlur={() => {
                           if (!product.name.trim()) {
-                            updateProductDetails(product.id, { name: 'Unnamed Product' });
+                            updateProductDetails(product.id, { name: T[lang].unnamedProduct });
                           }
                         }}
                         style={{
@@ -790,8 +790,8 @@ const SettingsView = ({
                           maxWidth: '180px',
                           transition: 'all var(--transition-fast)'
                         }}
-                        placeholder="Product Name"
-                        title="Click to rename product"
+                        placeholder={T[lang].unnamedProduct}
+                        title={T[lang].renameProductTitle}
                       />
                       <button
                         type="button"
@@ -823,7 +823,7 @@ const SettingsView = ({
                           const newType = e.target.value;
                           const updates = { type: newType };
                           if (newType === 'variable' && (!product.variants || product.variants.length === 0)) {
-                            updates.variants = ['Default Flavor'];
+                            updates.variants = [{ name: T[lang].defaultFlavor, image: '🥤' }];
                           } else if (newType === 'simple') {
                             updates.variants = null;
                           }
@@ -840,8 +840,8 @@ const SettingsView = ({
                           cursor: 'pointer'
                         }}
                       >
-                        <option value="simple">Simple</option>
-                        <option value="variable">Variable</option>
+                        <option value="simple">{lang === 'sq' ? 'I thjeshtë' : 'Simple'}</option>
+                        <option value="variable">{lang === 'sq' ? 'Me opsione' : 'Variable'}</option>
                       </select>
 
                       {/* Product Category Dropdown Selector */}
@@ -862,14 +862,9 @@ const SettingsView = ({
                       >
                         {categories.map(c => (
                           <option key={c} value={c} style={{ background: 'var(--bg-secondary)', color: 'var(--text)' }}>
-                            {c}
+                            {c === 'Uncategorized' ? T[lang].uncategorized : c}
                           </option>
                         ))}
-                        {!categories.includes(product.category) && (
-                          <option value={product.category} style={{ background: 'var(--bg-secondary)', color: 'var(--text)' }}>
-                            {product.category}
-                          </option>
-                        )}
                       </select>
                     </div>
                   </div>
@@ -877,12 +872,12 @@ const SettingsView = ({
 
                 <div className="editor-controls">
                   <div className="editor-control-group">
-                    <label>Price</label>
+                    <label>{T[lang].priceLabel.replace(' ($)', '')}</label>
                     <div 
                       className="price-input-wrapper" 
                       style={{ cursor: isAdminUnlocked ? 'text' : 'pointer' }}
                       onClick={() => { if (!isAdminUnlocked) setShowUnlockModal(true); }}
-                      title={!isAdminUnlocked ? "Unlock prices to edit" : ""}
+                      title={!isAdminUnlocked ? T[lang].unlockPriceEditing : ""}
                     >
                       <span className="price-input-prefix">$</span>
                       <input
@@ -907,7 +902,7 @@ const SettingsView = ({
                   </div>
 
                   <div className="editor-control-group">
-                    <label>Stock Level</label>
+                    <label>{lang === 'sq' ? 'Stoku' : 'Stock'}</label>
                     <input
                       type="number"
                       className="stock-input"
@@ -920,7 +915,7 @@ const SettingsView = ({
                   <button
                     type="button"
                     onClick={() => {
-                      if (window.confirm(`Are you sure you want to delete "${product.name}"?`)) {
+                      if (window.confirm(`${T[lang].productDeletedConfirm} "${product.name}"?`)) {
                         removeProduct(product.id);
                       }
                     }}
@@ -939,7 +934,7 @@ const SettingsView = ({
                       transition: 'all var(--transition-fast)',
                       border: '1px solid transparent'
                     }}
-                    title="Delete product"
+                    title={lang === 'sq' ? 'Fshi produktin' : 'Delete product'}
                     onMouseEnter={(e) => {
                       e.currentTarget.style.color = 'var(--danger)';
                       e.currentTarget.style.background = 'var(--danger-glow)';
@@ -967,7 +962,7 @@ const SettingsView = ({
                 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                      Drink Flavor Options
+                      {T[lang].drinkFlavorOptions}
                     </span>
                   </div>
 
@@ -975,7 +970,7 @@ const SettingsView = ({
                   <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
                     {(!product.variants || product.variants.length === 0) ? (
                       <span style={{ fontSize: '0.8rem', color: 'var(--danger)', fontWeight: 500 }}>
-                        No options added yet. Click will show empty popup in register.
+                        {lang === 'sq' ? 'Nuk ka opsione të shtuara.' : 'No options added yet.'}
                       </span>
                     ) : (
                       product.variants.map(variant => {
@@ -1011,7 +1006,7 @@ const SettingsView = ({
                                 flexShrink: 0
                               }} 
                               className="variant-image-wrapper" 
-                              title={`Upload photo for ${variantName}`}
+                              title={lang === 'sq' ? `Ngarko foto për ${variantName}` : `Upload photo for ${variantName}`}
                             >
                               <ProductImage src={variantImage} alt={variantName} size="0.95rem" />
                               <label
@@ -1071,7 +1066,7 @@ const SettingsView = ({
                     <input
                       type="text"
                       className="settings-input"
-                      placeholder="Add option (e.g. Fanta)..."
+                      placeholder={T[lang].addOptionPlaceholder}
                       value={variantInputs[product.id] || ''}
                       onChange={(e) => setVariantInputs(prev => ({ ...prev, [product.id]: e.target.value }))}
                       style={{ padding: '6px 10px', fontSize: '0.75rem', flexGrow: 1 }}
@@ -1088,7 +1083,7 @@ const SettingsView = ({
                       onClick={() => handleAddVariant(product.id)}
                       style={{ padding: '6px 10px', fontSize: '0.75rem', borderRadius: '6px' }}
                     >
-                      + Option
+                      {T[lang].addOptionBtn}
                     </button>
                   </div>
                 </div>
@@ -1103,18 +1098,18 @@ const SettingsView = ({
         <div className="modal-overlay" onClick={() => { setShowUnlockModal(false); setLocalPasswordInput(''); setLocalAuthError(false); }}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '360px' }}>
             <div className="modal-header">
-              <h4>Unlock Price Editing</h4>
+              <h4>{T[lang].unlockPriceEditing}</h4>
               <button className="modal-close-btn" onClick={() => { setShowUnlockModal(false); setLocalPasswordInput(''); setLocalAuthError(false); }}>×</button>
             </div>
             <div className="modal-body">
               <p style={{ color: 'var(--text-muted)', marginBottom: '16px', fontSize: '0.85rem', lineHeight: '1.4' }}>
-                Please enter the admin password to unlock price adjustments:
+                {T[lang].enterPasswordToEditPrices}
               </p>
               <form onSubmit={handleLocalUnlockSubmit} className="auth-form">
                 <input
                   type="password"
                   className="pin-input"
-                  placeholder="••••••••"
+                  placeholder={T[lang].pinPlaceholder}
                   value={localPasswordInput}
                   onChange={(e) => setLocalPasswordInput(e.target.value)}
                   autoFocus
@@ -1122,11 +1117,11 @@ const SettingsView = ({
                 />
                 {localAuthError && (
                   <span className="pin-input-error" style={{ fontSize: '0.75rem' }}>
-                    Invalid password.
+                    {T[lang].invalidAdminPassword}
                   </span>
                 )}
                 <button type="submit" className="btn btn-primary" style={{ width: '100%', padding: '10px' }}>
-                  Unlock
+                  {T[lang].unlock}
                 </button>
               </form>
             </div>

@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { DollarSign, Flame, BarChart3, AlertTriangle, Calendar, RefreshCcw, Lock } from 'lucide-react';
+import { T } from '../utils/translations';
 
 const DashboardView = ({ 
   products, 
@@ -7,7 +8,8 @@ const DashboardView = ({
   restockProduct, 
   isAdminUnlocked, 
   promptAdminLogin,
-  voidTransaction
+  voidTransaction,
+  lang = 'sq'
 }) => {
   const [filterType, setFilterType] = useState('Week'); // Day, Week, Month, Custom
   const [startDate, setStartDate] = useState(
@@ -65,7 +67,6 @@ const DashboardView = ({
     });
 
     const averageOrderValue = filteredSales.length > 0 ? totalRevenue / filteredSales.length : 0;
-    
     const lowStockCount = products.filter(p => p.stock <= 5).length;
 
     return {
@@ -101,7 +102,6 @@ const DashboardView = ({
     return products.map(product => {
       const soldToday = soldCounts[product.id] || 0;
       const currentStock = product.stock;
-      // Starting stock is roughly current + sold today
       const startingStock = currentStock + soldToday;
 
       return {
@@ -119,12 +119,9 @@ const DashboardView = ({
   // Chart calculation: Group sales by date string (e.g. YYYY-MM-DD)
   const chartData = useMemo(() => {
     const dailyMap = {};
-    
-    // Initialize dates within the range with $0 sales
     const start = new Date(startDate);
     const end = new Date(endDate);
     
-    // Prevent infinite loop or lockups on bad dates
     let loopDate = new Date(start);
     const maxDays = 95; // Guard rails
     let count = 0;
@@ -146,16 +143,15 @@ const DashboardView = ({
 
     // Convert map to sorted array
     return Object.keys(dailyMap).sort().map(dateStr => {
-      const [year, month, day] = dateStr.split('-');
       const date = new Date(dateStr);
-      const label = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      const label = date.toLocaleDateString(lang === 'sq' ? 'sq-AL' : 'en-US', { month: 'short', day: 'numeric' });
       return {
         dateStr,
         label,
         value: dailyMap[dateStr]
       };
     });
-  }, [filteredSales, startDate, endDate]);
+  }, [filteredSales, startDate, endDate, lang]);
 
   // Generate SVG coordinates for rendering
   const svgParams = useMemo(() => {
@@ -179,7 +175,6 @@ const DashboardView = ({
       return { x, y, label: data.label, value: data.value };
     });
 
-    // Create line path definition
     let linePath = '';
     let areaPath = '';
 
@@ -189,7 +184,6 @@ const DashboardView = ({
         linePath += ` L ${points[i].x} ${points[i].y}`;
       }
 
-      // Close path for area gradient fill
       areaPath = `${linePath} L ${points[points.length - 1].x} ${height - paddingBottom} L ${points[0].x} ${height - paddingBottom} Z`;
     }
 
@@ -220,7 +214,7 @@ const DashboardView = ({
   };
 
   const handleVoidClick = (transactionId) => {
-    if (window.confirm(`Are you sure you want to void/delete transaction ${transactionId}?`)) {
+    if (window.confirm(`${T[lang].confirmVoid} ${transactionId}?`)) {
       if (!isAdminUnlocked) {
         promptAdminLogin(() => {
           voidTransaction(transactionId);
@@ -242,14 +236,14 @@ const DashboardView = ({
               className={`filter-btn ${filterType === type ? 'active' : ''}`}
               onClick={() => handleFilterTypeChange(type)}
             >
-              {type === 'Day' ? 'Today' : type === 'Week' ? 'Last 7 Days' : 'Last 30 Days'}
+              {type === 'Day' ? T[lang].today : type === 'Week' ? T[lang].last7Days : T[lang].last30Days}
             </button>
           ))}
           <button
             className={`filter-btn ${filterType === 'Custom' ? 'active' : ''}`}
             onClick={() => setFilterType('Custom')}
           >
-            Custom Range
+            {T[lang].customRange}
           </button>
         </div>
 
@@ -264,7 +258,7 @@ const DashboardView = ({
               setFilterType('Custom');
             }}
           />
-          <span className="text-muted">to</span>
+          <span className="text-muted">{T[lang].to}</span>
           <input
             type="date"
             className="date-input"
@@ -281,53 +275,53 @@ const DashboardView = ({
       <div className="metrics-row">
         <div className="metric-card glass-panel">
           <div className="metric-header">
-            <span className="metric-title">Revenue</span>
+            <span className="metric-title">{T[lang].revenue}</span>
             <div className="metric-icon-box revenue">
               <DollarSign size={18} />
             </div>
           </div>
           <span className="metric-value">${metrics.revenue.toFixed(2)}</span>
           <span className="metric-trend trend-up">
-            Active Filter Range
+            {T[lang].activeFilterRange}
           </span>
         </div>
 
         <div className="metric-card glass-panel">
           <div className="metric-header">
-            <span className="metric-title">Drinks Sold</span>
+            <span className="metric-title">{T[lang].drinksSold}</span>
             <div className="metric-icon-box items">
               <Flame size={18} />
             </div>
           </div>
           <span className="metric-value">{metrics.items} qty</span>
           <span className="metric-trend trend-up">
-            Across {metrics.transactions} orders
+            {T[lang].acrossOrders.replace('{count}', metrics.transactions)}
           </span>
         </div>
 
         <div className="metric-card glass-panel">
           <div className="metric-header">
-            <span className="metric-title">Average Order</span>
+            <span className="metric-title">{T[lang].averageOrder}</span>
             <div className="metric-icon-box average">
               <DollarSign size={18} />
             </div>
           </div>
           <span className="metric-value">${metrics.aov.toFixed(2)}</span>
           <span className="metric-trend trend-up">
-            Average ticket size
+            {T[lang].averageTicketSize}
           </span>
         </div>
 
         <div className="metric-card glass-panel">
           <div className="metric-header">
-            <span className="metric-title">Low Stock Alerts</span>
+            <span className="metric-title">{T[lang].lowStockAlerts}</span>
             <div className={`metric-icon-box ${metrics.lowStock > 0 ? 'lowstock' : 'revenue'}`}>
               <AlertTriangle size={18} />
             </div>
           </div>
           <span className="metric-value">{metrics.lowStock} item(s)</span>
           <span className={`metric-trend ${metrics.lowStock > 0 ? 'trend-down' : 'trend-up'}`}>
-            {metrics.lowStock > 0 ? 'Require restocking' : 'All items well stocked'}
+            {metrics.lowStock > 0 ? T[lang].requireRestocking : T[lang].allWellStocked}
           </span>
         </div>
       </div>
@@ -337,16 +331,16 @@ const DashboardView = ({
         {/* Sales Chart Panel */}
         <div className="glass-panel" style={{ display: 'flex', flexDirection: 'column' }}>
           <div className="dashboard-panel-header">
-            <h3>Revenue Over Time</h3>
+            <h3>{T[lang].revenueOverTime}</h3>
             <span className="live-clock" style={{ fontSize: '0.75rem', fontWeight: 600 }}>
-              {filterType === 'Custom' ? 'Custom Filter' : `${filterType} sales`}
+              {filterType === 'Custom' ? T[lang].customRange : `${T[lang].revenue} (${filterType === 'Day' ? T[lang].today : filterType === 'Week' ? T[lang].last7Days : T[lang].last30Days})`}
             </span>
           </div>
           <div className="chart-container">
             {chartData.length === 0 || !svgParams ? (
               <div className="chart-empty-state">
                 <BarChart3 size={40} style={{ opacity: 0.2 }} />
-                <p>No sales recorded in this period</p>
+                <p>{T[lang].noSalesPeriod}</p>
               </div>
             ) : (
               <div className="chart-wrapper">
@@ -425,7 +419,7 @@ const DashboardView = ({
                     );
                   })}
 
-                  {/* X Axis Labels (Sampled to avoid overcrowding) */}
+                  {/* X Axis Labels */}
                   {svgParams.points
                     .filter((_, idx) => {
                       const totalPoints = svgParams.points.length;
@@ -452,9 +446,9 @@ const DashboardView = ({
         {/* Inventory Tracker Table */}
         <div className="glass-panel" style={{ display: 'flex', flexDirection: 'column' }}>
           <div className="dashboard-panel-header">
-            <h3>Inventory Status</h3>
+            <h3>{T[lang].inventoryStatus}</h3>
             <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-              Stock & sales today
+              {T[lang].stockSalesToday}
             </span>
           </div>
 
@@ -463,24 +457,27 @@ const DashboardView = ({
               <table className="data-table">
                 <thead>
                   <tr>
-                    <th>Drink</th>
-                    <th>Today Sold</th>
-                    <th>Stock Left</th>
-                    <th>Status</th>
-                    <th>Action</th>
+                    <th>{T[lang].drinkTableHead}</th>
+                    <th>{T[lang].todaySoldTableHead}</th>
+                    <th>{T[lang].stockLeftTableHead}</th>
+                    <th>{T[lang].statusTableHead}</th>
+                    <th>{T[lang].actionTableHead}</th>
                   </tr>
                 </thead>
                 <tbody>
                   {inventoryStats.map((item) => {
                     let statusClass = 'instock';
-                    let statusLabel = 'In Stock';
+                    let statusLabel = T[lang].allWellStocked;
                     
                     if (item.currentStock === 0) {
                       statusClass = 'out';
-                      statusLabel = 'Out of Stock';
+                      statusLabel = T[lang].outOfStock;
                     } else if (item.currentStock <= 5) {
                       statusClass = 'lowstock';
-                      statusLabel = 'Low Stock';
+                      statusLabel = T[lang].lowStock;
+                    } else {
+                      statusClass = 'instock';
+                      statusLabel = T[lang].inStock || 'In Stock';
                     }
 
                     return (
@@ -525,9 +522,9 @@ const DashboardView = ({
       {/* 3. Recent Transactions Log Panel */}
       <div className="glass-panel" style={{ marginTop: '24px', display: 'flex', flexDirection: 'column', width: '100%', boxSizing: 'border-box' }}>
         <div className="dashboard-panel-header">
-          <h3>Recent Transactions History</h3>
+          <h3>{T[lang].recentTransactionsHistory}</h3>
           <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-            Void or review earlier checkout logs
+            {T[lang].voidOrReview}
           </span>
         </div>
 
@@ -535,18 +532,18 @@ const DashboardView = ({
           {salesHistory.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--text-muted)' }}>
               <BarChart3 size={32} style={{ opacity: 0.3, marginBottom: '8px' }} />
-              <p style={{ margin: 0, fontSize: '0.9rem' }}>No transactions recorded yet.</p>
+              <p style={{ margin: 0, fontSize: '0.9rem' }}>{T[lang].noTransactionsRecorded}</p>
             </div>
           ) : (
             <div className="table-wrapper">
               <table className="data-table">
                 <thead>
                   <tr>
-                    <th>Transaction ID</th>
-                    <th>Date & Time</th>
-                    <th>Items Purchased</th>
-                    <th style={{ textAlign: 'right' }}>Total</th>
-                    <th style={{ textAlign: 'center' }}>Action</th>
+                    <th>{T[lang].transactionId}</th>
+                    <th>{T[lang].dateTime}</th>
+                    <th>{T[lang].itemsPurchased}</th>
+                    <th style={{ textAlign: 'right' }}>{T[lang].total}</th>
+                    <th style={{ textAlign: 'center' }}>{T[lang].actionTableHead}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -556,7 +553,7 @@ const DashboardView = ({
                         {sale.id}
                       </td>
                       <td style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                        {new Date(sale.timestamp).toLocaleString('en-US', {
+                        {new Date(sale.timestamp).toLocaleString(lang === 'sq' ? 'sq-AL' : 'en-US', {
                           month: 'short',
                           day: 'numeric',
                           hour: '2-digit',
@@ -602,7 +599,7 @@ const DashboardView = ({
                           }}
                         >
                           {!isAdminUnlocked && <Lock size={10} style={{ opacity: 0.7 }} />}
-                          Void
+                          {T[lang].void}
                         </button>
                       </td>
                     </tr>

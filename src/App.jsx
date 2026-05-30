@@ -6,6 +6,7 @@ import DashboardView from './components/DashboardView';
 import SettingsView from './components/SettingsView';
 import ProductImage from './components/ProductImage';
 import { supabase, isSupabaseConfigured } from './utils/supabaseClient';
+import { T } from './utils/translations';
 import { 
   Dumbbell, 
   Layers, 
@@ -116,6 +117,15 @@ function App() {
 
   // Syncing / Loading State
   const [isLoading, setIsLoading] = useState(isSupabaseConfigured);
+
+  // Language State (Albanian by default)
+  const [lang, setLang] = useState(() => {
+    return localStorage.getItem('gym_pos_lang') || 'sq';
+  });
+
+  useEffect(() => {
+    localStorage.setItem('gym_pos_lang', lang);
+  }, [lang]);
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
@@ -879,8 +889,8 @@ function App() {
           borderTopColor: 'var(--primary)',
           animation: 'spin 1s linear infinite'
         }}></div>
-        <h3 style={{ margin: 0, fontWeight: 600 }}>Syncing ProBasket...</h3>
-        <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', margin: 0 }}>Connecting to Supabase cloud database...</p>
+        <h3 style={{ margin: 0, fontWeight: 600 }}>{T[lang].loadingSyncTitle}</h3>
+        <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', margin: 0 }}>{T[lang].loadingSyncSubtitle}</p>
         <style>{`
           @keyframes spin {
             to { transform: rotate(360deg); }
@@ -909,7 +919,7 @@ function App() {
               onClick={() => setActiveTab('register')}
             >
               <Layers size={18} />
-              POS Register
+              {T[lang].posRegister}
             </button>
           </li>
           <li>
@@ -918,7 +928,7 @@ function App() {
               onClick={() => setActiveTab('dashboard')}
             >
               <BarChart3 size={18} />
-              Dashboard
+              {T[lang].dashboard}
             </button>
           </li>
           <li>
@@ -927,7 +937,7 @@ function App() {
               onClick={() => setActiveTab('settings')}
             >
               <Settings size={18} />
-              Admin Controls
+              {T[lang].adminControls}
             </button>
           </li>
         </ul>
@@ -936,18 +946,18 @@ function App() {
           {isAdminUnlocked ? (
             <div className="admin-badge unlocked" onClick={handleLock}>
               <Unlock size={14} style={{ marginRight: '6px' }} />
-              Admin Mode Active
+              {T[lang].adminModeActive}
             </div>
           ) : (
             <div 
               className="admin-badge locked" 
               onClick={() => {
                 setActiveTab('settings');
-                addToast('Please enter password to unlock admin privileges.', 'error');
+                addToast(T[lang].pleaseEnterPassword, 'error');
               }}
             >
               <Lock size={14} style={{ marginRight: '6px' }} />
-              Worker Mode
+              {T[lang].workerMode}
             </div>
           )}
         </div>
@@ -958,12 +968,37 @@ function App() {
         <header className="header">
           <div className="header-title">
             <h2>
-              {activeTab === 'register' && 'Drink Register'}
-              {activeTab === 'dashboard' && 'Analytics & Inventory'}
-              {activeTab === 'settings' && 'System Configurations'}
+              {activeTab === 'register' && T[lang].drinkRegister}
+              {activeTab === 'dashboard' && T[lang].dashboard}
+              {activeTab === 'settings' && T[lang].systemConfigurations}
             </h2>
           </div>
-          <div className="header-meta">
+          <div className="header-meta" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            {/* Language Switcher Toggle */}
+            <button 
+              className="header-theme-toggle"
+              onClick={() => setLang(l => l === 'sq' ? 'en' : 'sq')}
+              style={{
+                background: 'rgba(255, 255, 255, 0.04)',
+                border: '1px solid var(--border-color)',
+                color: 'var(--text)',
+                borderRadius: '18px',
+                padding: '0 12px',
+                height: '36px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                transition: 'all var(--transition-fast)',
+                fontSize: '0.85rem',
+                fontWeight: 600
+              }}
+              title={lang === 'sq' ? 'Switch to English' : 'Kalo në Shqip'}
+            >
+              {lang === 'sq' ? 'SQ' : 'EN'}
+            </button>
+
+            {/* Theme Toggle */}
             <button 
               className="header-theme-toggle"
               onClick={toggleTheme}
@@ -980,7 +1015,7 @@ function App() {
                 cursor: 'pointer',
                 transition: 'all var(--transition-fast)'
               }}
-              title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+              title={theme === 'dark' ? T[lang].switchThemeLight : T[lang].switchThemeDark}
             >
               {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
             </button>
@@ -997,6 +1032,7 @@ function App() {
                 addToCart={addToCart} 
                 categories={categories}
                 onOpenVariantModal={setVariantModalProduct}
+                lang={lang}
               />
               <CartSidebar 
                 cart={cart}
@@ -1006,6 +1042,7 @@ function App() {
                 onCheckout={handleCheckout}
                 isMobileCartOpen={isMobileCartOpen}
                 onCloseMobileCart={() => setIsMobileCartOpen(false)}
+                lang={lang}
               />
             </div>
           )}
@@ -1018,6 +1055,7 @@ function App() {
               isAdminUnlocked={isAdminUnlocked}
               promptAdminLogin={promptAdminLogin}
               voidTransaction={voidTransaction}
+              lang={lang}
             />
           )}
 
@@ -1037,6 +1075,7 @@ function App() {
               removeCategory={removeCategory}
               addProduct={addProduct}
               removeProduct={removeProduct}
+              lang={lang}
             />
           )}
         </section>
@@ -1048,8 +1087,8 @@ function App() {
               <CheckCircle2 size={44} strokeWidth={2.5} />
             </div>
             <div className="success-text">
-              <h4>Payment Successful</h4>
-              <p>Transaction processed, inventory updated.</p>
+              <h4>{T[lang].paymentSuccessful}</h4>
+              <p>{T[lang].transactionProcessed}</p>
             </div>
           </div>
         )}
@@ -1078,18 +1117,18 @@ function App() {
         <div className="modal-overlay" onClick={() => setAuthPopupCallback(null)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '360px' }}>
             <div className="modal-header">
-              <h4>Authorize Action</h4>
+              <h4>{T[lang].authorizeAction}</h4>
               <button className="modal-close-btn" onClick={() => setAuthPopupCallback(null)}>×</button>
             </div>
             <div className="modal-body">
               <p style={{ color: 'var(--text-muted)', marginBottom: '16px', fontSize: '0.85rem', lineHeight: '1.4' }}>
-                Restocking inventory levels requires Admin authorization. Please enter your password:
+                {T[lang].restockAuthNotice}
               </p>
               <form onSubmit={handleAuthPopupSubmit} className="auth-form">
                 <input
                   type="password"
                   className="pin-input"
-                  placeholder="••••••••"
+                  placeholder={T[lang].pinPlaceholder}
                   value={authPopupPassword}
                   onChange={(e) => setAuthPopupPassword(e.target.value)}
                   autoFocus
@@ -1097,11 +1136,11 @@ function App() {
                 />
                 {authPopupError && (
                   <span className="pin-input-error" style={{ fontSize: '0.75rem' }}>
-                    Invalid password.
+                    {T[lang].invalidAdminPassword}
                   </span>
                 )}
                 <button type="submit" className="btn btn-primary" style={{ width: '100%', padding: '10px' }}>
-                  Authorize
+                  {T[lang].authorize}
                 </button>
               </form>
             </div>
@@ -1109,17 +1148,17 @@ function App() {
         </div>
       )}
 
-      {/* 5. Global Variant Selector Modal (mount at root to prevent z-index sibling overlay overlap) */}
+      {/* 5. Global Variant Selector Modal */}
       {variantModalProduct && (
         <div className="modal-overlay" onClick={() => setVariantModalProduct(null)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h4>Select Flavor / Option</h4>
+              <h4>{T[lang].selectFlavor}</h4>
               <button className="modal-close-btn" onClick={() => setVariantModalProduct(null)}>×</button>
             </div>
             <div className="modal-body">
               <p style={{ color: 'var(--text-muted)', marginBottom: '16px', fontSize: '0.9rem' }}>
-                Choosing option for <strong>{variantModalProduct.name}</strong> - ${variantModalProduct.price.toFixed(2)}
+                {T[lang].choosingOptionFor} <strong>{variantModalProduct.name}</strong> - ${variantModalProduct.price.toFixed(2)}
               </p>
               <div className="variant-grid">
                 {(variantModalProduct.variants || []).map((variant) => (

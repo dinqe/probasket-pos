@@ -1,5 +1,6 @@
 import React from 'react';
 import { ShoppingCart, Plus, Minus, Trash2, CreditCard } from 'lucide-react';
+import { T } from '../utils/translations';
 
 const CartSidebar = ({ 
   cart, 
@@ -8,7 +9,8 @@ const CartSidebar = ({
   emptyCart, 
   onCheckout, 
   isMobileCartOpen = false, 
-  onCloseMobileCart 
+  onCloseMobileCart,
+  lang = 'en'
 }) => {
   // Financial Math
   const TAX_RATE = 0.0; // No tax
@@ -33,10 +35,12 @@ const CartSidebar = ({
       <div className="cart-header">
         <h3>
           <ShoppingCart size={18} />
-          Current Cart
+          {T[lang].currentCart}
         </h3>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <span className="cart-count">{totalItemsCount} {totalItemsCount === 1 ? 'item' : 'items'}</span>
+          <span className="cart-count">
+            {totalItemsCount} {totalItemsCount === 1 ? (lang === 'sq' ? 'artikull' : 'item') : (lang === 'sq' ? 'artikuj' : 'items')}
+          </span>
           {onCloseMobileCart && (
             <button 
               className="cart-close-btn"
@@ -67,9 +71,9 @@ const CartSidebar = ({
         {cart.length === 0 ? (
           <div className="cart-empty">
             <span className="cart-empty-icon">🛒</span>
-            <p>Your cart is empty</p>
+            <p>{T[lang].cartIsEmpty}</p>
             <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-              Click products to add them
+              {T[lang].clickProductsToAdd}
             </span>
           </div>
         ) : (
@@ -124,11 +128,11 @@ const CartSidebar = ({
 
       <div className="cart-summary">
         <div className="summary-row">
-          <span>Subtotal</span>
+          <span>{T[lang].subtotal}</span>
           <span>${subtotal.toFixed(2)}</span>
         </div>
         <div className="summary-row total">
-          <span>Total</span>
+          <span>{T[lang].total}</span>
           <span className="total-amount">${total.toFixed(2)}</span>
         </div>
 
@@ -138,7 +142,7 @@ const CartSidebar = ({
             onClick={emptyCart}
             disabled={cart.length === 0}
           >
-            Clear
+            {T[lang].clear}
           </button>
           <button 
             className="btn btn-primary" 
@@ -146,7 +150,7 @@ const CartSidebar = ({
             disabled={cart.length === 0}
           >
             <CreditCard size={16} />
-            Pay
+            {T[lang].pay}
           </button>
         </div>
       </div>

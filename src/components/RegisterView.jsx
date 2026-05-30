@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { Search, ShoppingBag, Layers, Eye, Check } from 'lucide-react';
 import ProductImage from './ProductImage';
+import { T } from '../utils/translations';
 
-const RegisterView = ({ products, addToCart, categories, onOpenVariantModal }) => {
+const RegisterView = ({ products, addToCart, categories, onOpenVariantModal, lang }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
 
@@ -27,13 +28,6 @@ const RegisterView = ({ products, addToCart, categories, onOpenVariantModal }) =
     }
   };
 
-  const handleVariantSelect = (variant) => {
-    if (variantModalProduct) {
-      addToCart(variantModalProduct, variant);
-      setVariantModalProduct(null);
-    }
-  };
-
   return (
     <div className="pos-workspace fade-in-view">
       <div className="catalog-panel">
@@ -43,7 +37,7 @@ const RegisterView = ({ products, addToCart, categories, onOpenVariantModal }) =
             <Search className="search-icon" size={18} />
             <input
               type="text"
-              placeholder="Search drink..."
+              placeholder={T[lang].searchDrink}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
@@ -56,7 +50,7 @@ const RegisterView = ({ products, addToCart, categories, onOpenVariantModal }) =
                 className={`category-tab ${activeCategory === category ? 'active' : ''}`}
                 onClick={() => setSelectedCategory(category)}
               >
-                {category}
+                {category === 'All' ? (lang === 'sq' ? 'Të gjitha' : 'All') : category}
               </button>
             ))}
           </div>
@@ -67,7 +61,7 @@ const RegisterView = ({ products, addToCart, categories, onOpenVariantModal }) =
           {filteredProducts.length === 0 ? (
             <div className="cart-empty" style={{ gridColumn: '1 / -1', height: '300px' }}>
               <div className="cart-empty-icon">🔍</div>
-              <p>No products match your search</p>
+              <p>{T[lang].noProductsMatch}</p>
             </div>
           ) : (
             <div className="products-grid">
@@ -81,8 +75,8 @@ const RegisterView = ({ products, addToCart, categories, onOpenVariantModal }) =
                     className={`product-card glass-panel ${isOutOfStock ? 'out-of-stock' : ''}`}
                     onClick={() => handleProductClick(product)}
                   >
-                    {isOutOfStock && <span className="stock-out">Out of Stock</span>}
-                    {isLowStock && <span className="stock-warning">Low Stock ({product.stock})</span>}
+                    {isOutOfStock && <span className="stock-out">{T[lang].outOfStock}</span>}
+                    {isLowStock && <span className="stock-warning">{T[lang].lowStock} ({product.stock})</span>}
                     {product.isFavorite && (
                       <span 
                         style={{ 
@@ -109,7 +103,7 @@ const RegisterView = ({ products, addToCart, categories, onOpenVariantModal }) =
                         <span className="product-price">${product.price.toFixed(2)}</span>
                         
                         <span className={`product-badge ${product.type === 'variable' ? 'badge-variant' : 'badge-simple'}`}>
-                          {product.type === 'variable' ? 'Variants' : 'Simple'}
+                          {product.type === 'variable' ? T[lang].variants : T[lang].simple}
                         </span>
                       </div>
                     </div>
