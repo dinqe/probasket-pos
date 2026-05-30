@@ -817,6 +817,47 @@ function App() {
     setAdminPassword(newPassword);
   };
 
+  const voidTransaction = async (transactionId) => {
+    const transaction = salesHistory.find((t) => t.id === transactionId);
+    if (!transaction) return;
+
+    if (isSupabaseConfigured) {
+      try {
+        const { error } = await supabase.from('sales').delete().eq('id', transactionId);
+        if (error) throw error;
+
+        // Restore stock levels for products that still exist
+        for (const item of transaction.items) {
+          const product = products.find((p) => p.id === item.productId);
+          if (product) {
+            const newStock = product.stock + item.qty;
+            const { error: stockErr } = await supabase.from('products').update({ stock: newStock }).eq('id', product.id);
+            if (stockErr) throw stockErr;
+          }
+        }
+      } catch (err) {
+        console.error("Failed to void transaction in Supabase:", err);
+        addToast("Error syncing voided transaction to cloud.", "error");
+        return;
+      }
+    }
+
+    // Update local products stock if they exist
+    setProducts((prevProducts) => {
+      return prevProducts.map((p) => {
+        const itemInTransaction = transaction.items.find((item) => item.productId === p.id);
+        if (itemInTransaction) {
+          return { ...p, stock: p.stock + itemInTransaction.qty };
+        }
+        return p;
+      });
+    });
+
+    // Remove from local sales history
+    setSalesHistory((prev) => prev.filter((t) => t.id !== transactionId));
+    addToast(`Transaction ${transactionId} voided.`, 'success');
+  };
+
   if (isLoading) {
     return (
       <div className="loading-sync-container" style={{
@@ -976,6 +1017,7 @@ function App() {
               restockProduct={restockProduct}
               isAdminUnlocked={isAdminUnlocked}
               promptAdminLogin={promptAdminLogin}
+              voidTransaction={voidTransaction}
             />
           )}
 

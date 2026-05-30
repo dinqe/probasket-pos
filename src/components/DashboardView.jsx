@@ -6,7 +6,8 @@ const DashboardView = ({
   salesHistory, 
   restockProduct, 
   isAdminUnlocked, 
-  promptAdminLogin 
+  promptAdminLogin,
+  voidTransaction
 }) => {
   const [filterType, setFilterType] = useState('Week'); // Day, Week, Month, Custom
   const [startDate, setStartDate] = useState(
@@ -215,6 +216,18 @@ const DashboardView = ({
       });
     } else {
       restockProduct(productId, 10);
+    }
+  };
+
+  const handleVoidClick = (transactionId) => {
+    if (window.confirm(`Are you sure you want to void/delete transaction ${transactionId}?`)) {
+      if (!isAdminUnlocked) {
+        promptAdminLogin(() => {
+          voidTransaction(transactionId);
+        });
+      } else {
+        voidTransaction(transactionId);
+      }
     }
   };
 
@@ -506,6 +519,98 @@ const DashboardView = ({
               </table>
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* 3. Recent Transactions Log Panel */}
+      <div className="glass-panel" style={{ marginTop: '24px', display: 'flex', flexDirection: 'column', width: '100%', boxSizing: 'border-box' }}>
+        <div className="dashboard-panel-header">
+          <h3>Recent Transactions History</h3>
+          <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+            Void or review earlier checkout logs
+          </span>
+        </div>
+
+        <div className="inventory-container" style={{ maxHeight: '350px', overflowY: 'auto' }}>
+          {salesHistory.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--text-muted)' }}>
+              <BarChart3 size={32} style={{ opacity: 0.3, marginBottom: '8px' }} />
+              <p style={{ margin: 0, fontSize: '0.9rem' }}>No transactions recorded yet.</p>
+            </div>
+          ) : (
+            <div className="table-wrapper">
+              <table className="data-table">
+                <thead>
+                  <tr>
+                    <th>Transaction ID</th>
+                    <th>Date & Time</th>
+                    <th>Items Purchased</th>
+                    <th style={{ textAlign: 'right' }}>Total</th>
+                    <th style={{ textAlign: 'center' }}>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {salesHistory.map((sale) => (
+                    <tr key={sale.id}>
+                      <td style={{ fontFamily: 'monospace', fontWeight: 600, fontSize: '0.85rem' }}>
+                        {sale.id}
+                      </td>
+                      <td style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                        {new Date(sale.timestamp).toLocaleString('en-US', {
+                          month: 'short',
+                          day: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                          hour12: true
+                        })}
+                      </td>
+                      <td style={{ fontSize: '0.85rem', maxWidth: '300px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={sale.items.map(item => `${item.qty}x ${item.productName}${item.variant ? ` (${item.variant})` : ''}`).join(', ')}>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+                          {sale.items.map(item => (
+                            <span key={`${item.productId}-${item.variant}`} style={{
+                              display: 'inline-block',
+                              background: 'rgba(255, 255, 255, 0.03)',
+                              border: '1px solid var(--border-color)',
+                              padding: '2px 6px',
+                              borderRadius: '4px',
+                              fontSize: '0.75rem'
+                            }}>
+                              {item.qty}x {item.productName}
+                              {item.variant && <span style={{ color: 'var(--primary)', marginLeft: '4px' }}>{item.variant}</span>}
+                            </span>
+                          ))}
+                        </div>
+                      </td>
+                      <td style={{ textAlign: 'right', fontWeight: 700, color: 'var(--primary)' }}>
+                        ${parseFloat(sale.total).toFixed(2)}
+                      </td>
+                      <td style={{ textAlign: 'center' }}>
+                        <button
+                          className="quick-action-btn"
+                          onClick={() => handleVoidClick(sale.id)}
+                          style={{
+                            background: 'var(--danger-glow)',
+                            border: '1px solid rgba(239, 68, 68, 0.25)',
+                            color: 'var(--danger)',
+                            fontSize: '0.75rem',
+                            padding: '4px 8px',
+                            borderRadius: '6px',
+                            cursor: 'pointer',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '4px'
+                          }}
+                        >
+                          {!isAdminUnlocked && <Lock size={10} style={{ opacity: 0.7 }} />}
+                          Void
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       </div>
     </div>
