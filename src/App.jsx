@@ -352,9 +352,12 @@ function App() {
       );
 
       if (existingIndex > -1) {
-        // Increment quantity
+        // Increment quantity by copying the item object to avoid mutating previous state directly
         const updated = [...prevCart];
-        updated[existingIndex].quantity += 1;
+        updated[existingIndex] = {
+          ...updated[existingIndex],
+          quantity: updated[existingIndex].quantity + 1
+        };
         return updated;
       } else {
         // Add new item
@@ -388,7 +391,11 @@ function App() {
           addToast(`Cannot add. Only ${product.stock} units left in stock.`, 'error');
           return prevCart;
         }
-        updated[index].quantity = newQty;
+        // Copy the item object to avoid mutating previous state directly
+        updated[index] = {
+          ...updated[index],
+          quantity: newQty
+        };
       }
       return updated;
     });
