@@ -895,7 +895,7 @@ function App() {
       {/* 1. Left Sidebar Navigation */}
       <aside className="sidebar">
         <div className="logo-container" style={{ gap: '12px', alignItems: 'center' }}>
-          <img src="/logo.jpg" alt="ProBasket Logo" style={{ width: '40px', height: '40px', borderRadius: '8px', objectFit: 'cover', border: '1px solid var(--border-color)' }} />
+          <img src="/logo.jpg" alt="ProBasket Logo" style={{ width: '40px', height: '40px', borderRadius: '8px', objectFit: 'contain', background: '#fff', padding: '2px', border: '1px solid var(--border-color)' }} />
           <div className="logo-text">
             <h1>ProBasket</h1>
             <span>Gym Drink POS</span>

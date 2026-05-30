@@ -290,6 +290,7 @@ body {
   display: flex;
   height: 100%;
   gap: 24px;
+  flex-grow: 1;
 }
 
 .catalog-panel {
