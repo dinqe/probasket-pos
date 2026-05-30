@@ -101,6 +101,11 @@ function App() {
   });
 
   // --- Session & UI States ---
+  const [isSessionUnlocked, setIsSessionUnlocked] = useState(() => {
+    return localStorage.getItem('probasket_session_unlocked') === 'true';
+  });
+  const [appPasswordInput, setAppPasswordInput] = useState('');
+  const [appAuthError, setAppAuthError] = useState(false);
   const [isAdminUnlocked, setIsAdminUnlocked] = useState(false);
   const [activeTab, setActiveTab] = useState('register'); // register, dashboard, settings
   const [cart, setCart] = useState([]);
@@ -664,9 +669,30 @@ function App() {
     }
   };
 
+  const handleAppUnlock = (e) => {
+    e.preventDefault();
+    if (appPasswordInput === adminPassword) {
+      setIsSessionUnlocked(true);
+      setAppAuthError(false);
+      setAppPasswordInput('');
+      localStorage.setItem('probasket_session_unlocked', 'true');
+      addToast(lang === 'sq' ? 'Mirë se vini në ProBasket POS!' : 'Welcome to ProBasket POS!', 'success');
+    } else {
+      setAppAuthError(true);
+      addToast(T[lang].invalidAdminPassword, 'error');
+    }
+  };
+
+  const handleLockApp = () => {
+    setIsSessionUnlocked(false);
+    localStorage.removeItem('probasket_session_unlocked');
+    setIsAdminUnlocked(false);
+    addToast(lang === 'sq' ? 'Kasa u bllokua.' : 'POS locked.', 'success');
+  };
+
   const handleLock = () => {
     setIsAdminUnlocked(false);
-    addToast('Admin panel locked.', 'success');
+    addToast(T[lang].adminPanelLocked, 'success');
   };
 
   // --- Developer/Demo Helpers ---
@@ -900,6 +926,105 @@ function App() {
     );
   }
 
+  if (!isSessionUnlocked) {
+    return (
+      <div 
+        className="app-container" 
+        style={{ 
+          justifyContent: 'center', 
+          alignItems: 'center',
+          flexDirection: 'column',
+          position: 'relative'
+        }}
+      >
+        {/* Language & Theme switches on Login Page */}
+        <div style={{ position: 'absolute', top: '24px', right: '24px', display: 'flex', gap: '12px', alignItems: 'center', zIndex: 10 }}>
+          <button 
+            className="header-theme-toggle"
+            onClick={() => setLang(l => l === 'sq' ? 'en' : 'sq')}
+            style={{
+              background: 'rgba(255, 255, 255, 0.04)',
+              border: '1px solid var(--border-color)',
+              padding: '0 12px',
+              height: '36px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              borderRadius: '20px',
+              cursor: 'pointer',
+              fontSize: '0.85rem',
+              color: 'var(--text)',
+              fontWeight: 600,
+              transition: 'all var(--transition-fast)'
+            }}
+            title={lang === 'sq' ? 'Switch to English' : 'Kalo në Shqip'}
+          >
+            {lang === 'sq' ? 'SQ' : 'EN'}
+          </button>
+          <button
+            className="header-theme-toggle"
+            onClick={toggleTheme}
+            style={{
+              width: '36px',
+              height: '36px',
+              borderRadius: '50%',
+              border: '1px solid var(--border-color)',
+              background: 'rgba(255, 255, 255, 0.04)',
+              color: 'var(--text)',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              transition: 'all var(--transition-fast)'
+            }}
+            title={theme === 'dark' ? T[lang].switchThemeLight : T[lang].switchThemeDark}
+          >
+            {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
+          </button>
+        </div>
+
+        <div className="glass-panel fade-in-view" style={{ width: '90%', maxWidth: '400px', padding: '32px 24px', textAlign: 'center', display: 'flex', flexDirection: 'column', gap: '24px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
+            <img src="/logo.jpg" alt="ProBasket Logo" style={{ width: '70px', height: '70px', borderRadius: '16px', objectFit: 'contain', background: '#fff', padding: '4px', border: '1px solid var(--border-color)' }} />
+            <div style={{ textAlign: 'center' }}>
+              <h2 style={{ fontSize: '1.6rem', fontWeight: 700, letterSpacing: '-0.5px' }}>ProBasket POS</h2>
+              <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '4px' }}>{T[lang].enterAppPasscode}</p>
+            </div>
+          </div>
+
+          <form onSubmit={handleAppUnlock} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div className="form-group" style={{ textAlign: 'left' }}>
+              <label style={{ fontSize: '0.8rem', fontWeight: 600, display: 'block', marginBottom: '6px' }}>{T[lang].appPasscodeLabel}</label>
+              <input
+                type="password"
+                className="settings-input"
+                placeholder={T[lang].pinPlaceholder}
+                value={appPasswordInput}
+                onChange={(e) => {
+                  setAppPasswordInput(e.target.value);
+                  setAppAuthError(false);
+                }}
+                required
+                style={{ padding: '12px', fontSize: '1.1rem', letterSpacing: appPasswordInput ? '4px' : 'normal', textAlign: 'center', width: '100%', outline: 'none' }}
+                autoFocus
+              />
+              {appAuthError && (
+                <span className="pin-input-error" style={{ fontSize: '0.8rem', marginTop: '6px', display: 'block', color: 'var(--danger)', fontWeight: 500 }}>
+                  {T[lang].invalidAdminPassword}
+                </span>
+              )}
+            </div>
+
+            <button type="submit" className="btn btn-primary" style={{ padding: '12px', fontSize: '0.95rem', display: 'flex', gap: '8px', justifyContent: 'center', width: '100%' }}>
+              <Unlock size={16} />
+              {T[lang].unlockApp}
+            </button>
+          </form>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="app-container">
       {/* 1. Left Sidebar Navigation */}
@@ -1018,6 +1143,28 @@ function App() {
               title={theme === 'dark' ? T[lang].switchThemeLight : T[lang].switchThemeDark}
             >
               {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
+            </button>
+
+            {/* Lock POS Application */}
+            <button 
+              className="header-theme-toggle"
+              onClick={handleLockApp}
+              style={{
+                background: 'rgba(239, 68, 68, 0.08)',
+                border: '1px solid rgba(239, 68, 68, 0.2)',
+                color: 'var(--danger)',
+                borderRadius: '50%',
+                width: '36px',
+                height: '36px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                transition: 'all var(--transition-fast)'
+              }}
+              title={T[lang].lockApp}
+            >
+              <Lock size={16} />
             </button>
             <span className="live-clock">{currentTime}</span>
           </div>

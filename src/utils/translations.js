@@ -143,6 +143,10 @@ export const T = {
     defaultFlavor: "Shije standarde",
     loadingSyncTitle: "Duke sinkronizuar ProBasket...",
     loadingSyncSubtitle: "Duke u lidhur me databazën në cloud Supabase...",
+    enterAppPasscode: "Shkruani fjalëkalimin për të hyrë në POS",
+    unlockApp: "Hyr në POS",
+    appPasscodeLabel: "Fjalëkalimi i POS-it",
+    lockApp: "Mbyll POS",
   },
   en: {
     // Sidebar & Navigation
@@ -288,5 +292,9 @@ export const T = {
     defaultFlavor: "Default Flavor",
     loadingSyncTitle: "Syncing ProBasket...",
     loadingSyncSubtitle: "Connecting to Supabase cloud database...",
+    enterAppPasscode: "Enter password to access POS",
+    unlockApp: "Access POS",
+    appPasscodeLabel: "POS Access Password",
+    lockApp: "Lock POS",
   }
 };
