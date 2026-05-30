@@ -11,7 +11,7 @@ const CartSidebar = ({
   onCloseMobileCart 
 }) => {
   // Financial Math
-  const TAX_RATE = 0.085; // 8.5%
+  const TAX_RATE = 0.0; // No tax
 
   const totalItemsCount = cart.reduce((acc, item) => acc + item.quantity, 0);
   
@@ -126,10 +126,6 @@ const CartSidebar = ({
         <div className="summary-row">
           <span>Subtotal</span>
           <span>${subtotal.toFixed(2)}</span>
-        </div>
-        <div className="summary-row">
-          <span>Sales Tax (8.5%)</span>
-          <span>${tax.toFixed(2)}</span>
         </div>
         <div className="summary-row total">
           <span>Total</span>
