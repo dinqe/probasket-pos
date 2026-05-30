@@ -11,9 +11,9 @@ const DashboardView = ({
   voidTransaction,
   lang = 'sq'
 }) => {
-  const [filterType, setFilterType] = useState('Week'); // Day, Week, Month, Custom
+  const [filterType, setFilterType] = useState('Day'); // Day, Week, Month, Custom
   const [startDate, setStartDate] = useState(
-    new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+    new Date().toISOString().split('T')[0]
   );
   const [endDate, setEndDate] = useState(
     new Date().toISOString().split('T')[0]
