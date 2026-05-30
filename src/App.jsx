@@ -95,6 +95,11 @@ function App() {
     return saved ? JSON.parse(saved) : 'gym123';
   });
 
+  const [workerPasscode, setWorkerPasscode] = useState(() => {
+    const saved = localStorage.getItem('gym_pos_worker_passcode');
+    return saved ? JSON.parse(saved) : '1234';
+  });
+
   const [categories, setCategories] = useState(() => {
     const saved = localStorage.getItem('gym_pos_categories');
     return saved ? JSON.parse(saved) : ['Hydration', 'Protein', 'Energy', 'Snacks'];
@@ -242,6 +247,26 @@ function App() {
           setAdminPassword('gym123');
         }
 
+        let { data: workerData, error: workerError } = await supabase
+          .from('settings')
+          .select('*')
+          .eq('key', 'worker_passcode')
+          .single();
+        
+        if (workerError && workerError.code !== 'PGRST116') {
+          throw workerError;
+        }
+
+        if (workerData) {
+          setWorkerPasscode(workerData.value);
+        } else {
+          const { error: seedError } = await supabase
+            .from('settings')
+            .insert([{ key: 'worker_passcode', value: '1234' }]);
+          if (seedError) throw seedError;
+          setWorkerPasscode('1234');
+        }
+
       } catch (err) {
         console.error("Error loading data from Supabase:", err);
         addToast("Error connecting to database. Running in offline/cached mode.", "error");
@@ -265,6 +290,10 @@ function App() {
   useEffect(() => {
     localStorage.setItem('gym_pos_admin_password', JSON.stringify(adminPassword));
   }, [adminPassword]);
+
+  useEffect(() => {
+    localStorage.setItem('gym_pos_worker_passcode', JSON.stringify(workerPasscode));
+  }, [workerPasscode]);
 
   useEffect(() => {
     localStorage.setItem('gym_pos_categories', JSON.stringify(categories));
@@ -671,7 +700,7 @@ function App() {
 
   const handleAppUnlock = (e) => {
     e.preventDefault();
-    if (appPasswordInput === adminPassword) {
+    if (appPasswordInput === workerPasscode || appPasswordInput === adminPassword) {
       setIsSessionUnlocked(true);
       setAppAuthError(false);
       setAppPasswordInput('');
@@ -811,13 +840,17 @@ function App() {
         // Re-seed settings
         const { error: settingsErr } = await supabase
           .from('settings')
-          .insert([{ key: 'admin_password', value: 'gym123' }]);
+          .insert([
+            { key: 'admin_password', value: 'gym123' },
+            { key: 'worker_passcode', value: '1234' }
+          ]);
         if (settingsErr) throw settingsErr;
 
         setCategories(seededCats.map(c => c.name));
         setProducts(seededProds.map(p => mapProductFromDB(p)));
         setSalesHistory([]);
         setAdminPassword('gym123');
+        setWorkerPasscode('1234');
       } catch (err) {
         console.error("Failed to reset Supabase to default:", err);
         addToast("Error resetting database in the cloud.", "error");
@@ -830,6 +863,7 @@ function App() {
       setSalesHistory([]);
       setCategories(['Hydration', 'Protein', 'Energy', 'Snacks']);
       setAdminPassword('gym123');
+      setWorkerPasscode('1234');
     }
 
     setIsAdminUnlocked(false);
@@ -851,6 +885,22 @@ function App() {
       }
     }
     setAdminPassword(newPassword);
+  };
+
+  const updateWorkerPasscode = async (newPasscode) => {
+    if (isSupabaseConfigured) {
+      try {
+        const { error } = await supabase
+          .from('settings')
+          .upsert({ key: 'worker_passcode', value: newPasscode });
+        if (error) throw error;
+      } catch (err) {
+        console.error("Failed to update worker passcode in Supabase:", err);
+        addToast("Error syncing passcode to cloud.", "error");
+        return;
+      }
+    }
+    setWorkerPasscode(newPasscode);
   };
 
   const voidTransaction = async (transactionId) => {
@@ -1212,6 +1262,8 @@ function App() {
               updateProductDetails={updateProductDetails}
               adminPassword={adminPassword}
               setAdminPassword={updateAdminPassword}
+              workerPasscode={workerPasscode}
+              setWorkerPasscode={updateWorkerPasscode}
               isAdminUnlocked={isAdminUnlocked}
               setIsAdminUnlocked={setIsAdminUnlocked}
               generateDummySales={generateDummySales}

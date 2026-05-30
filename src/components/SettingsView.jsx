@@ -9,6 +9,8 @@ const SettingsView = ({
   updateProductDetails, 
   adminPassword, 
   setAdminPassword, 
+  workerPasscode,
+  setWorkerPasscode,
   isAdminUnlocked, 
   setIsAdminUnlocked, 
   generateDummySales, 
@@ -23,6 +25,27 @@ const SettingsView = ({
 }) => {
   const [passwordInput, setPasswordInput] = useState('');
   const [authError, setAuthError] = useState(false);
+
+  // Worker passcode form states
+  const [newWorkerPw, setNewWorkerPw] = useState('');
+  const [confirmNewWorkerPw, setConfirmNewWorkerPw] = useState('');
+
+  const handleWorkerPasscodeChangeSubmit = (e) => {
+    e.preventDefault();
+    if (newWorkerPw.trim() === '') {
+      addToast(lang === 'sq' ? 'Fjalëkalimi i ri nuk mund të jetë bosh.' : 'New passcode cannot be empty.', 'error');
+      return;
+    }
+    if (newWorkerPw !== confirmNewWorkerPw) {
+      addToast(lang === 'sq' ? 'Fjalëkalimet nuk përputhen.' : 'Passcodes do not match.', 'error');
+      return;
+    }
+
+    setWorkerPasscode(newWorkerPw);
+    setNewWorkerPw('');
+    setConfirmNewWorkerPw('');
+    addToast(lang === 'sq' ? 'Fjalëkalimi i POS-it u përditësua me sukses!' : 'POS access passcode updated successfully!', 'success');
+  };
   const [newCategoryInput, setNewCategoryInput] = useState('');
 
   // Local Unlock Modal States
@@ -391,6 +414,40 @@ const SettingsView = ({
 
               <button type="submit" className="btn btn-secondary" style={{ padding: '10px' }}>
                 {T[lang].changePasswordBtn}
+              </button>
+            </form>
+
+            {/* Change Worker Passcode */}
+            <form onSubmit={handleWorkerPasscodeChangeSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginTop: '24px', paddingTop: '20px', borderTop: '1px solid var(--border-color)' }}>
+              <h4 style={{ fontWeight: 600, fontSize: '0.95rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <KeyRound size={16} className="text-primary" />
+                {lang === 'sq' ? 'Ndrysho Fjalëkalimin e POS (Punonjësit)' : 'Change POS Access Passcode'}
+              </h4>
+
+              <div className="form-group">
+                <label>{lang === 'sq' ? 'Fjalëkalimi i Ri i POS-it' : 'New POS Passcode'}</label>
+                <input
+                  type="password"
+                  className="settings-input"
+                  value={newWorkerPw}
+                  onChange={(e) => setNewWorkerPw(e.target.value)}
+                  required
+                />
+              </div>
+
+              <div className="form-group">
+                <label>{lang === 'sq' ? 'Konfirmo Fjalëkalimin e Ri' : 'Confirm New Passcode'}</label>
+                <input
+                  type="password"
+                  className="settings-input"
+                  value={confirmNewWorkerPw}
+                  onChange={(e) => setConfirmNewWorkerPw(e.target.value)}
+                  required
+                />
+              </div>
+
+              <button type="submit" className="btn btn-secondary" style={{ padding: '10px' }}>
+                {lang === 'sq' ? 'Ndrysho Fjalëkalimin e POS-it' : 'Update POS Passcode'}
               </button>
             </form>
           </div>
