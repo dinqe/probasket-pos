@@ -1,5 +1,5 @@
 import React from 'react';
-import { ShoppingCart, Plus, Minus, Trash2, CreditCard } from 'lucide-react';
+import { ShoppingCart, Plus, Minus, Trash2, CreditCard, Crown } from 'lucide-react';
 import { T } from '../utils/translations';
 
 const CartSidebar = ({ 
@@ -8,6 +8,7 @@ const CartSidebar = ({
   removeFromCart, 
   emptyCart, 
   onCheckout, 
+  onBossCheckout,
   isMobileCartOpen = false, 
   onCloseMobileCart,
   lang = 'en'
@@ -27,6 +28,14 @@ const CartSidebar = ({
   const handleCheckoutClick = () => {
     if (cart.length === 0) return;
     onCheckout(total, subtotal, tax, totalItemsCount);
+    if (onCloseMobileCart) onCloseMobileCart(); // auto-close cart on checkout
+  };
+
+  const handleBossCheckoutClick = () => {
+    if (cart.length === 0) return;
+    if (onBossCheckout) {
+      onBossCheckout(total, subtotal, tax, totalItemsCount);
+    }
     if (onCloseMobileCart) onCloseMobileCart(); // auto-close cart on checkout
   };
 
@@ -136,11 +145,12 @@ const CartSidebar = ({
           <span className="total-amount">${total.toFixed(2)}</span>
         </div>
 
-        <div className="cart-buttons">
+        <div className="cart-buttons" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
           <button 
             className="btn btn-secondary" 
             onClick={emptyCart}
             disabled={cart.length === 0}
+            style={{ gridColumn: 'span 2' }}
           >
             {T[lang].clear}
           </button>
@@ -151,6 +161,23 @@ const CartSidebar = ({
           >
             <CreditCard size={16} />
             {T[lang].pay}
+          </button>
+          <button 
+            className="btn btn-secondary" 
+            onClick={handleBossCheckoutClick}
+            disabled={cart.length === 0}
+            style={{ 
+              border: '1px solid var(--warning)', 
+              color: 'var(--warning)', 
+              background: 'rgba(245, 158, 11, 0.04)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '6px'
+            }}
+          >
+            <Crown size={14} />
+            BOSS
           </button>
         </div>
       </div>

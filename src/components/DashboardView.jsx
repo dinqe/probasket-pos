@@ -62,7 +62,9 @@ const DashboardView = ({
     let totalItems = 0;
     
     filteredSales.forEach(sale => {
-      totalRevenue += sale.total;
+      if (!sale.id.startsWith('TX-BOSS-')) {
+        totalRevenue += sale.total;
+      }
       totalItems += sale.quantity;
     });
 
@@ -135,9 +137,11 @@ const DashboardView = ({
 
     // Populate actual sales
     filteredSales.forEach(sale => {
-      const dateStr = sale.timestamp.split('T')[0];
-      if (dailyMap[dateStr] !== undefined) {
-        dailyMap[dateStr] += sale.total;
+      if (!sale.id.startsWith('TX-BOSS-')) {
+        const dateStr = sale.timestamp.split('T')[0];
+        if (dailyMap[dateStr] !== undefined) {
+          dailyMap[dateStr] += sale.total;
+        }
       }
     });
 
@@ -547,40 +551,59 @@ const DashboardView = ({
                   </tr>
                 </thead>
                 <tbody>
-                  {salesHistory.map((sale) => (
-                    <tr key={sale.id}>
-                      <td style={{ fontFamily: 'monospace', fontWeight: 600, fontSize: '0.85rem' }}>
-                        {sale.id}
-                      </td>
-                      <td style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                        {new Date(sale.timestamp).toLocaleString(lang === 'sq' ? 'sq-AL' : 'en-US', {
-                          month: 'short',
-                          day: 'numeric',
-                          hour: '2-digit',
-                          minute: '2-digit',
-                          hour12: true
-                        })}
-                      </td>
-                      <td style={{ fontSize: '0.85rem', maxWidth: '300px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={sale.items.map(item => `${item.qty}x ${item.productName}${item.variant ? ` (${item.variant})` : ''}`).join(', ')}>
-                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
-                          {sale.items.map(item => (
-                            <span key={`${item.productId}-${item.variant}`} style={{
-                              display: 'inline-block',
-                              background: 'rgba(255, 255, 255, 0.03)',
-                              border: '1px solid var(--border-color)',
-                              padding: '2px 6px',
+                  {salesHistory.map((sale) => {
+                    const isBoss = sale.id.startsWith('TX-BOSS-');
+                    return (
+                      <tr key={sale.id}>
+                        <td style={{ fontFamily: 'monospace', fontWeight: 600, fontSize: '0.85rem' }}>
+                          {isBoss ? (
+                            <span style={{ 
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '4px',
+                              color: 'var(--warning)', 
+                              background: 'rgba(245, 158, 11, 0.08)', 
+                              border: '1px solid rgba(245, 158, 11, 0.2)',
+                              padding: '2px 8px', 
                               borderRadius: '4px',
-                              fontSize: '0.75rem'
+                              fontSize: '0.75rem',
+                              fontWeight: 700
                             }}>
-                              {item.qty}x {item.productName}
-                              {item.variant && <span style={{ color: 'var(--primary)', marginLeft: '4px' }}>{item.variant}</span>}
+                              👑 BOSS
                             </span>
-                          ))}
-                        </div>
-                      </td>
-                      <td style={{ textAlign: 'right', fontWeight: 700, color: 'var(--primary)' }}>
-                        ${parseFloat(sale.total).toFixed(2)}
-                      </td>
+                          ) : (
+                            sale.id
+                          )}
+                        </td>
+                        <td style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                          {new Date(sale.timestamp).toLocaleString(lang === 'sq' ? 'sq-AL' : 'en-US', {
+                            month: 'short',
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                            hour12: true
+                          })}
+                        </td>
+                        <td style={{ fontSize: '0.85rem', maxWidth: '300px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={sale.items.map(item => `${item.qty}x ${item.productName}${item.variant ? ` (${item.variant})` : ''}`).join(', ')}>
+                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+                            {sale.items.map(item => (
+                              <span key={`${item.productId}-${item.variant}`} style={{
+                                display: 'inline-block',
+                                background: 'rgba(255, 255, 255, 0.03)',
+                                border: '1px solid var(--border-color)',
+                                padding: '2px 6px',
+                                borderRadius: '4px',
+                                fontSize: '0.75rem'
+                              }}>
+                                {item.qty}x {item.productName}
+                                {item.variant && <span style={{ color: 'var(--primary)', marginLeft: '4px' }}>{item.variant}</span>}
+                              </span>
+                            ))}
+                          </div>
+                        </td>
+                        <td style={{ textAlign: 'right', fontWeight: 700, color: isBoss ? 'var(--warning)' : 'var(--primary)' }}>
+                          {isBoss ? (lang === 'sq' ? 'FALAS (BOSS)' : 'BOSS (Free)') : `$${parseFloat(sale.total).toFixed(2)}`}
+                        </td>
                       <td style={{ textAlign: 'center' }}>
                         <button
                           className="quick-action-btn"
@@ -603,7 +626,7 @@ const DashboardView = ({
                         </button>
                       </td>
                     </tr>
-                  ))}
+                  );})}
                 </tbody>
               </table>
             </div>

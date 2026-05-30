@@ -13,6 +13,7 @@ const SettingsView = ({
   setWorkerPasscode,
   isAdminUnlocked, 
   setIsAdminUnlocked, 
+  unlockAdmin,
   generateDummySales, 
   resetToDefault,
   addToast,
@@ -209,16 +210,14 @@ const SettingsView = ({
   const [newPw, setNewPw] = useState('');
   const [confirmNewPw, setConfirmNewPw] = useState('');
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
-    if (passwordInput === adminPassword) {
-      setIsAdminUnlocked(true);
+    const success = await unlockAdmin(passwordInput);
+    if (success) {
       setAuthError(false);
       setPasswordInput('');
-      addToast(T[lang].pricingControlsUnlocked, 'success');
     } else {
       setAuthError(true);
-      addToast(T[lang].invalidAdminPassword, 'error');
     }
   };
 

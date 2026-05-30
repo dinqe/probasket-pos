@@ -5,7 +5,7 @@ import CartSidebar from './components/CartSidebar';
 import DashboardView from './components/DashboardView';
 import SettingsView from './components/SettingsView';
 import ProductImage from './components/ProductImage';
-import { supabase, isSupabaseConfigured } from './utils/supabaseClient';
+import { supabase, isSupabaseConfigured, setSupabaseAuthHeaders } from './utils/supabaseClient';
 import { T } from './utils/translations';
 import { 
   Dumbbell, 
@@ -91,11 +91,15 @@ function App() {
   });
 
   const [adminPassword, setAdminPassword] = useState(() => {
+    const sessionVal = sessionStorage.getItem('probasket_admin_password');
+    if (sessionVal) return sessionVal;
     const saved = localStorage.getItem('gym_pos_admin_password');
     return saved ? JSON.parse(saved) : 'gym123';
   });
 
   const [workerPasscode, setWorkerPasscode] = useState(() => {
+    const sessionVal = sessionStorage.getItem('probasket_worker_passcode');
+    if (sessionVal) return sessionVal;
     const saved = localStorage.getItem('gym_pos_worker_passcode');
     return saved ? JSON.parse(saved) : '1234';
   });
@@ -127,7 +131,7 @@ function App() {
   const [isMobileCartOpen, setIsMobileCartOpen] = useState(false);
 
   // Syncing / Loading State
-  const [isLoading, setIsLoading] = useState(isSupabaseConfigured);
+  const [isLoading, setIsLoading] = useState(false);
 
   // Language State (Albanian by default)
   const [lang, setLang] = useState(() => {
@@ -156,127 +160,126 @@ function App() {
   const [variantModalProduct, setVariantModalProduct] = useState(null);
 
   // --- Supabase Cloud Data Initialization & Seeding ---
-  useEffect(() => {
-    if (!isSupabaseConfigured) {
-      return;
-    }
+  const initSupabase = async () => {
+    if (!isSupabaseConfigured) return;
+    try {
+      setIsLoading(true);
 
-    const initSupabase = async () => {
-      try {
-        setIsLoading(true);
+      // 1. Fetch categories
+      let { data: catData, error: catError } = await supabase
+        .from('categories')
+        .select('*');
+      if (catError) throw catError;
 
-        // 1. Fetch categories
-        let { data: catData, error: catError } = await supabase
+      let loadedCategories = [];
+      if (!catData || catData.length === 0) {
+        // Seed categories
+        const defaultCats = ['Hydration', 'Protein', 'Energy', 'Snacks'];
+        const inserts = defaultCats.map(name => ({ name }));
+        const { data: seededCats, error: seedError } = await supabase
           .from('categories')
-          .select('*');
-        if (catError) throw catError;
-
-        let loadedCategories = [];
-        if (!catData || catData.length === 0) {
-          // Seed categories
-          const defaultCats = ['Hydration', 'Protein', 'Energy', 'Snacks'];
-          const inserts = defaultCats.map(name => ({ name }));
-          const { data: seededCats, error: seedError } = await supabase
-            .from('categories')
-            .insert(inserts)
-            .select();
-          if (seedError) throw seedError;
-          loadedCategories = seededCats.map(c => c.name);
-        } else {
-          loadedCategories = catData.map(c => c.name);
-        }
-        setCategories(loadedCategories);
-
-        // 2. Fetch products
-        let { data: prodData, error: prodError } = await supabase
-          .from('products')
-          .select('*');
-        if (prodError) throw prodError;
-
-        let loadedProducts = [];
-        if (!prodData || prodData.length === 0) {
-          // Seed products
-          const inserts = initialProducts.map(p => mapProductToDB(p));
-          const { data: seededProds, error: seedError } = await supabase
-            .from('products')
-            .insert(inserts)
-            .select();
-          if (seedError) throw seedError;
-          loadedProducts = seededProds.map(p => mapProductFromDB(p));
-        } else {
-          loadedProducts = prodData.map(p => mapProductFromDB(p));
-        }
-        setProducts(loadedProducts);
-
-        // 3. Fetch sales
-        let { data: salesData, error: salesError } = await supabase
-          .from('sales')
-          .select('*')
-          .order('timestamp', { ascending: false });
-        if (salesError) throw salesError;
-
-        if (salesData) {
-          setSalesHistory(salesData.map(s => ({
-            id: s.id,
-            timestamp: s.timestamp,
-            items: s.items,
-            subtotal: parseFloat(s.subtotal),
-            tax: parseFloat(s.tax),
-            total: parseFloat(s.total),
-            quantity: parseInt(s.quantity, 10)
-          })));
-        }
-
-        // 4. Fetch settings
-        let { data: settingsData, error: settingsError } = await supabase
-          .from('settings')
-          .select('*')
-          .eq('key', 'admin_password')
-          .single();
-        
-        if (settingsError && settingsError.code !== 'PGRST116') {
-          throw settingsError;
-        }
-
-        if (settingsData) {
-          setAdminPassword(settingsData.value);
-        } else {
-          const { error: seedError } = await supabase
-            .from('settings')
-            .insert([{ key: 'admin_password', value: 'gym123' }]);
-          if (seedError) throw seedError;
-          setAdminPassword('gym123');
-        }
-
-        let { data: workerData, error: workerError } = await supabase
-          .from('settings')
-          .select('*')
-          .eq('key', 'worker_passcode')
-          .single();
-        
-        if (workerError && workerError.code !== 'PGRST116') {
-          throw workerError;
-        }
-
-        if (workerData) {
-          setWorkerPasscode(workerData.value);
-        } else {
-          const { error: seedError } = await supabase
-            .from('settings')
-            .insert([{ key: 'worker_passcode', value: '1234' }]);
-          if (seedError) throw seedError;
-          setWorkerPasscode('1234');
-        }
-
-      } catch (err) {
-        console.error("Error loading data from Supabase:", err);
-        addToast("Error connecting to database. Running in offline/cached mode.", "error");
-      } finally {
-        setIsLoading(false);
+          .insert(inserts)
+          .select();
+        if (seedError) throw seedError;
+        loadedCategories = seededCats.map(c => c.name);
+      } else {
+        loadedCategories = catData.map(c => c.name);
       }
-    };
+      setCategories(loadedCategories);
 
-    initSupabase();
+      // 2. Fetch products
+      let { data: prodData, error: prodError } = await supabase
+        .from('products')
+        .select('*');
+      if (prodError) throw prodError;
+
+      let loadedProducts = [];
+      if (!prodData || prodData.length === 0) {
+        // Seed products
+        const inserts = initialProducts.map(p => mapProductToDB(p));
+        const { data: seededProds, error: seedError } = await supabase
+          .from('products')
+          .insert(inserts)
+          .select();
+        if (seedError) throw seedError;
+        loadedProducts = seededProds.map(p => mapProductFromDB(p));
+      } else {
+        loadedProducts = prodData.map(p => mapProductFromDB(p));
+      }
+      setProducts(loadedProducts);
+
+      // 3. Fetch sales
+      let { data: salesData, error: salesError } = await supabase
+        .from('sales')
+        .select('*')
+        .order('timestamp', { ascending: false });
+      if (salesError) throw salesError;
+
+      if (salesData) {
+        setSalesHistory(salesData.map(s => ({
+          id: s.id,
+          timestamp: s.timestamp,
+          items: s.items,
+          subtotal: parseFloat(s.subtotal),
+          tax: parseFloat(s.tax),
+          total: parseFloat(s.total),
+          quantity: parseInt(s.quantity, 10)
+        })));
+      }
+
+      // 4. Fetch settings values (gracefully, RLS will restrict workers)
+      let { data: settingsData } = await supabase
+        .from('settings')
+        .select('*')
+        .eq('key', 'admin_password')
+        .single();
+      if (settingsData) {
+        setAdminPassword(settingsData.value);
+      }
+
+      let { data: workerData } = await supabase
+        .from('settings')
+        .select('*')
+        .eq('key', 'worker_passcode')
+        .single();
+      if (workerData) {
+        setWorkerPasscode(workerData.value);
+      }
+
+    } catch (err) {
+      console.error("Error loading data from Supabase:", err);
+      addToast("Error connecting to database. Running in offline/cached mode.", "error");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Sync session and auth headers on mount
+  useEffect(() => {
+    const unlocked = localStorage.getItem('probasket_session_unlocked') === 'true';
+    const cachedWorker = sessionStorage.getItem('probasket_worker_passcode');
+    const cachedAdmin = sessionStorage.getItem('probasket_admin_password');
+
+    if (isSupabaseConfigured) {
+      if (unlocked && (cachedWorker || cachedAdmin)) {
+        setSupabaseAuthHeaders(cachedAdmin, cachedWorker);
+        setIsSessionUnlocked(true);
+        if (cachedAdmin) {
+          setIsAdminUnlocked(true);
+        }
+        initSupabase();
+      } else {
+        // Force lock on cold load if credentials not in memory (for cloud security)
+        setIsSessionUnlocked(false);
+        localStorage.removeItem('probasket_session_unlocked');
+        sessionStorage.removeItem('probasket_worker_passcode');
+        sessionStorage.removeItem('probasket_admin_password');
+        setSupabaseAuthHeaders(null, null);
+      }
+    } else {
+      // Offline mode
+      setIsSessionUnlocked(unlocked);
+    }
   }, []);
 
   // Sync state modifications to LocalStorage
@@ -414,7 +417,7 @@ function App() {
   };
 
   // --- POS Transaction Processing (Checkout) ---
-  const handleCheckout = async (total, subtotal, tax, quantity) => {
+  const handleCheckout = async (total, subtotal, tax, quantity, isBoss = false) => {
     // 1. Stock check validation
     for (const item of cart) {
       const latestProduct = products.find((p) => p.id === item.product.id);
@@ -425,19 +428,20 @@ function App() {
     }
 
     // 2. Log sales history transaction
+    const prefix = isBoss ? 'TX-BOSS' : 'TX';
     const newTransaction = {
-      id: `TX-${Date.now()}`,
+      id: `${prefix}-${Date.now()}`,
       timestamp: new Date().toISOString(),
       items: cart.map((item) => ({
         productId: item.product.id,
         productName: item.product.name,
         variant: item.variant,
-        price: item.product.price,
+        price: isBoss ? 0 : item.product.price,
         qty: item.quantity
       })),
-      subtotal,
-      tax,
-      total,
+      subtotal: isBoss ? 0 : subtotal,
+      tax: isBoss ? 0 : tax,
+      total: isBoss ? 0 : total,
       quantity
     };
 
@@ -689,47 +693,203 @@ function App() {
     setAuthPopupError(false);
   };
 
-  const handleAuthPopupSubmit = (e) => {
+  const handleAuthPopupSubmit = async (e) => {
     e.preventDefault();
-    if (authPopupPassword === adminPassword) {
-      setIsAdminUnlocked(true);
-      setAuthPopupError(false);
-      setAuthPopupPassword('');
-      if (authPopupCallback) {
-        authPopupCallback();
+    const input = authPopupPassword;
+    
+    if (isSupabaseConfigured) {
+      try {
+        setIsLoading(true);
+        const cachedWorker = sessionStorage.getItem('probasket_worker_passcode');
+        const prevAdmin = sessionStorage.getItem('probasket_admin_password');
+        setSupabaseAuthHeaders(input, cachedWorker);
+        
+        const { data, error } = await supabase
+          .from('settings')
+          .select('key')
+          .eq('key', 'admin_password')
+          .single();
+          
+        if (data && !error) {
+          sessionStorage.setItem('probasket_admin_password', input);
+          setAdminPassword(input);
+          setIsAdminUnlocked(true);
+          setAuthPopupError(false);
+          setAuthPopupPassword('');
+          
+          if (authPopupCallback) {
+            authPopupCallback();
+          }
+          setAuthPopupCallback(null);
+          addToast('Authorized successfully!', 'success');
+        } else {
+          // Restore previous headers
+          setSupabaseAuthHeaders(prevAdmin, cachedWorker);
+          setAuthPopupError(true);
+          addToast('Invalid admin password.', 'error');
+        }
+      } catch (err) {
+        console.error("Auth popup submit error:", err);
+        setAuthPopupError(true);
+        addToast('Error verifying credentials.', 'error');
+      } finally {
+        setIsLoading(false);
       }
-      setAuthPopupCallback(null);
-      addToast('Authorized successfully!', 'success');
     } else {
-      setAuthPopupError(true);
-      addToast('Invalid admin password.', 'error');
+      // Offline mode
+      if (input === adminPassword) {
+        if (authPopupCallback) {
+          authPopupCallback();
+        }
+        setAuthPopupCallback(null);
+        setAuthPopupPassword('');
+        setAuthPopupError(false);
+        addToast('Authorized successfully!', 'success');
+      } else {
+        setAuthPopupError(true);
+        addToast('Invalid admin password.', 'error');
+      }
     }
   };
 
-  const handleAppUnlock = (e) => {
+  const handleAppUnlock = async (e) => {
     e.preventDefault();
-    if (appPasswordInput === workerPasscode || appPasswordInput === adminPassword) {
-      setIsSessionUnlocked(true);
-      setAppAuthError(false);
-      setAppPasswordInput('');
-      localStorage.setItem('probasket_session_unlocked', 'true');
-      addToast(lang === 'sq' ? 'Mirë se vini në ProBasket POS!' : 'Welcome to ProBasket POS!', 'success');
+    const input = appPasswordInput;
+    setIsLoading(true);
+
+    if (isSupabaseConfigured) {
+      try {
+        // 1. Try verifying as admin password first
+        setSupabaseAuthHeaders(input, null);
+        const { data: adminCheck, error: adminErr } = await supabase
+          .from('settings')
+          .select('key')
+          .eq('key', 'admin_password')
+          .single();
+
+        if (adminCheck && !adminErr) {
+          setIsSessionUnlocked(true);
+          setIsAdminUnlocked(true);
+          setAppAuthError(false);
+          setAppPasswordInput('');
+          localStorage.setItem('probasket_session_unlocked', 'true');
+          sessionStorage.setItem('probasket_admin_password', input);
+          setAdminPassword(input);
+          await initSupabase();
+          addToast(lang === 'sq' ? 'Mirë se vini (Admin)!' : 'Welcome (Admin)!', 'success');
+          setIsLoading(false);
+          return;
+        }
+
+        // 2. Try verifying as worker passcode
+        setSupabaseAuthHeaders(null, input);
+        const { data: workerCheck, error: workerErr } = await supabase
+          .from('settings')
+          .select('key')
+          .eq('key', 'worker_passcode')
+          .single();
+
+        if (workerCheck && !workerErr) {
+          setIsSessionUnlocked(true);
+          setAppAuthError(false);
+          setAppPasswordInput('');
+          localStorage.setItem('probasket_session_unlocked', 'true');
+          sessionStorage.setItem('probasket_worker_passcode', input);
+          setWorkerPasscode(input);
+          await initSupabase();
+          addToast(lang === 'sq' ? 'Mirë se vini në ProBasket POS!' : 'Welcome to ProBasket POS!', 'success');
+          setIsLoading(false);
+          return;
+        }
+
+        // Fail
+        setSupabaseAuthHeaders(null, null);
+        setAppAuthError(true);
+        addToast(T[lang].invalidAdminPassword, 'error');
+      } catch (err) {
+        console.error("Unlock verify error:", err);
+        addToast("Error contacting authorization server.", "error");
+      } finally {
+        setIsLoading(false);
+      }
     } else {
-      setAppAuthError(true);
-      addToast(T[lang].invalidAdminPassword, 'error');
+      // Offline mode check
+      if (input === workerPasscode || input === adminPassword) {
+        setIsSessionUnlocked(true);
+        setAppAuthError(false);
+        setAppPasswordInput('');
+        localStorage.setItem('probasket_session_unlocked', 'true');
+        addToast(lang === 'sq' ? 'Mirë se vini në ProBasket POS!' : 'Welcome to ProBasket POS!', 'success');
+      } else {
+        setAppAuthError(true);
+        addToast(T[lang].invalidAdminPassword, 'error');
+      }
+      setIsLoading(false);
     }
   };
 
   const handleLockApp = () => {
     setIsSessionUnlocked(false);
     localStorage.removeItem('probasket_session_unlocked');
+    sessionStorage.removeItem('probasket_worker_passcode');
+    sessionStorage.removeItem('probasket_admin_password');
+    setSupabaseAuthHeaders(null, null);
     setIsAdminUnlocked(false);
     addToast(lang === 'sq' ? 'Kasa u bllokua.' : 'POS locked.', 'success');
   };
 
   const handleLock = () => {
     setIsAdminUnlocked(false);
+    sessionStorage.removeItem('probasket_admin_password');
+    // Restore worker passcode headers only
+    const cachedWorker = sessionStorage.getItem('probasket_worker_passcode');
+    setSupabaseAuthHeaders(null, cachedWorker);
     addToast(T[lang].adminPanelLocked, 'success');
+  };
+
+  const unlockAdmin = async (password) => {
+    if (isSupabaseConfigured) {
+      try {
+        setIsLoading(true);
+        const cachedWorker = sessionStorage.getItem('probasket_worker_passcode');
+        setSupabaseAuthHeaders(password, cachedWorker);
+        
+        const { data, error } = await supabase
+          .from('settings')
+          .select('key')
+          .eq('key', 'admin_password')
+          .single();
+
+        if (data && !error) {
+          setIsAdminUnlocked(true);
+          setAdminPassword(password);
+          sessionStorage.setItem('probasket_admin_password', password);
+          addToast(lang === 'sq' ? 'U kyçët si Administrator!' : 'Logged in as Admin!', 'success');
+          setIsLoading(false);
+          return true;
+        } else {
+          // Restore previous worker header
+          setSupabaseAuthHeaders(null, cachedWorker);
+          addToast(T[lang].invalidAdminPassword, 'error');
+          setIsLoading(false);
+          return false;
+        }
+      } catch (err) {
+        console.error("Unlock admin error:", err);
+        addToast("Error verifying credentials.", "error");
+        setIsLoading(false);
+        return false;
+      }
+    } else {
+      if (password === adminPassword) {
+        setIsAdminUnlocked(true);
+        addToast(lang === 'sq' ? 'U kyçët si Administrator!' : 'Logged in as Admin!', 'success');
+        return true;
+      } else {
+        addToast(T[lang].invalidAdminPassword, 'error');
+        return false;
+      }
+    }
   };
 
   // --- Developer/Demo Helpers ---
@@ -893,6 +1053,9 @@ function App() {
       }
     }
     setAdminPassword(newPassword);
+    sessionStorage.setItem('probasket_admin_password', newPassword);
+    const cachedWorker = sessionStorage.getItem('probasket_worker_passcode');
+    setSupabaseAuthHeaders(newPassword, cachedWorker);
   };
 
   const updateWorkerPasscode = async (newPasscode) => {
@@ -1271,6 +1434,7 @@ function App() {
                 removeFromCart={removeFromCart}
                 emptyCart={emptyCart}
                 onCheckout={handleCheckout}
+                onBossCheckout={(total, subtotal, tax, quantity) => handleCheckout(total, subtotal, tax, quantity, true)}
                 isMobileCartOpen={isMobileCartOpen}
                 onCloseMobileCart={() => setIsMobileCartOpen(false)}
                 lang={lang}
@@ -1300,6 +1464,7 @@ function App() {
               setWorkerPasscode={updateWorkerPasscode}
               isAdminUnlocked={isAdminUnlocked}
               setIsAdminUnlocked={setIsAdminUnlocked}
+              unlockAdmin={unlockAdmin}
               generateDummySales={generateDummySales}
               resetToDefault={resetToDefault}
               addToast={addToast}
